@@ -1,13 +1,13 @@
 /******************************************************************************
-* File Name:   MotorCtrlHWConfig.c
+* File Name:   HWConfigXmc7x.c
 *
-* Description: Motor control hardware configuration file.
+* Description: Motor control hardware configuration file for XMC7200 MCU.
 *
 * Related Document: See README.md
 *
 *
 *******************************************************************************
-* Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -39,9 +39,10 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#include "MotorCtrlHWConfig.h"
+#include <Configuration/HWConfigXmc7x.h>
 
-TEMP_SENS_LUT_t   Temp_Sens_LUT   = 
+#if defined(COMPONENT_CAT1C)
+TEMP_SENS_LUT_t   Temp_Sens_LUT   =
 {
     .step = 1.0f / (TEMP_SENS_LUT_WIDTH + 1.0f),    // [%], normalized voltage wrt Vcc
     .step_inv = (TEMP_SENS_LUT_WIDTH + 1.0f),       // [1/%], inverse normalized voltage
@@ -82,7 +83,7 @@ void MCU_RoutingConfigMUXA()
 
     adc_channel_config = *ADC_1_config.channelConfig[0];
     adc_channel_config.pinAddress =  CY_SAR2_PIN_ADDRESS_VMOTOR;
-    Cy_SAR2_Channel_Init(ADC_1_HW, 0, &adc_channel_config);  
+    Cy_SAR2_Channel_Init(ADC_1_HW, 0, &adc_channel_config);
 }
 
 void MCU_RoutingConfigMUXB()
@@ -100,15 +101,16 @@ void MCU_RoutingConfigMUXB()
 
 void MCU_DisableTimerReload()
 {
-    TCPWM_GRP_CNT_TR_OUT_SEL(SYNC_ISR1_HW, TCPWM_GRP_CNT_GET_GRP(SYNC_ISR1_NUM), SYNC_ISR1_NUM) = 
-      (_VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT0, CY_TCPWM_CNT_TRIGGER_ON_DISABLED) | 
+    TCPWM_GRP_CNT_TR_OUT_SEL(SYNC_ISR1_HW, TCPWM_GRP_CNT_GET_GRP(SYNC_ISR1_NUM), SYNC_ISR1_NUM) =
+      (_VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT0, CY_TCPWM_CNT_TRIGGER_ON_DISABLED) |
        _VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT1, CY_TCPWM_CNT_TRIGGER_ON_DISABLED));
 }
 
 void MCU_EnableTimerReload()
 {
-    TCPWM_GRP_CNT_TR_OUT_SEL(SYNC_ISR1_HW, TCPWM_GRP_CNT_GET_GRP(SYNC_ISR1_NUM), SYNC_ISR1_NUM) = 
-      (_VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT0, CY_TCPWM_CNT_TRIGGER_ON_OVERFLOW) | 
+    TCPWM_GRP_CNT_TR_OUT_SEL(SYNC_ISR1_HW, TCPWM_GRP_CNT_GET_GRP(SYNC_ISR1_NUM), SYNC_ISR1_NUM) =
+      (_VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT0, CY_TCPWM_CNT_TRIGGER_ON_OVERFLOW) |
        _VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT1, CY_TCPWM_CNT_TRIGGER_ON_DISABLED));
 }
 
+#endif

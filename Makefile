@@ -40,7 +40,7 @@ MTB_TYPE=COMBINED
 # To change the target, it is recommended to use the Library manager
 # ('make library-manager' from command line), which will also update Eclipse IDE launch
 # configurations.
-TARGET=KIT_XMC7200_DC_V1
+TARGET=KIT_PSC3M5_CC2
 
 # Name of application (used to derive name of final linked file).
 #
@@ -84,7 +84,6 @@ VERBOSE=
 CTRL=CTRL_METHOD_RFO
 
 DEFINES+=$(CTRL)
-DEFINES+=RAMFUNC_ENABLE
 
 # Enable optional code that is ordinarily disabled by default.
 #
@@ -114,8 +113,24 @@ SOURCES=
 
 CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/ParamsDefault*)
 
+ifeq ($(TARGET),APP_KIT_PSC3M5_CC2)
 
-#Precompiled library selection based on control method
+#Precompiled library selection based on control method - PSOC Control C3
+ifeq ($(CTRL),CTRL_METHOD_TBC)
+CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a )
+else
+ifeq ($(CTRL),CTRL_METHOD_SFO)
+CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
+else
+CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
+endif
+endif
+
+else #XMC7x
+
+DEFINES+=RAMFUNC_ENABLE # Enable execution from RAM
+
+#Precompiled library selection based on control method - XMC7x
 ifeq ($(CTRL),CTRL_METHOD_TBC)
 CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a )
 else
@@ -123,6 +138,7 @@ ifeq ($(CTRL),CTRL_METHOD_SFO)
 CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
 else
 CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
+endif
 endif
 endif
 
@@ -156,7 +172,9 @@ CXXFLAGS=
 ASFLAGS=
 
 # Additional / custom linker flags.
-LDFLAGS=
+ifeq ($(TOOLCHAIN),ARM)
+LDFLAGS=--diag_suppress=L6848
+endif
 
 # Additional / custom libraries to link in to the application.
 LDLIBS=
@@ -200,7 +218,7 @@ CY_GETLIBS_SHARED_NAME=mtb_shared
 #
 # The default depends on the selected TOOLCHAIN (GCC_ARM uses the ModusToolbox
 # software provided compiler by default).
-CY_COMPILER_GCC_ARM_DIR=
+CY_COMPILER_PATH=
 
 
 # Locate ModusToolbox helper tools folders in default installation

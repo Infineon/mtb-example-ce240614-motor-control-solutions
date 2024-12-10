@@ -1,10 +1,10 @@
 /******************************************************************************
-* File Name:   main.c
+* File Name:   MotorCtrlHWConfig.h
 *
-* Description: This code example demonstrates the implementation of PMSM sensorless
-* field-oriented control (FOC) using the Infineon's MCUs.
+* Description: Motor control hardware configuration header file.
 *
 * Related Document: See README.md
+*
 *
 *******************************************************************************
 * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
@@ -39,53 +39,16 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-/*******************************************************************************
-* Header Files
-*******************************************************************************/
-#include "HardwareIface.h"
-#include "cybsp.h"
-#include "Controller.h"
+#ifndef MOTORCTRLHWCONFIG_H_
+#define MOTORCTRLHWCONFIG_H_
 
-/*******************************************************************************
-* Global variable
-********************************************************************************/
-/* XMC7x - GCC_ARM: EEPROM storage */
-#if defined(COMPONENT_CAT1C)
-uint8_t Em_Eeprom_Storage[srss_0_eeprom_0_PHYSICAL_SIZE] __attribute__ ((section(".cy_em_eeprom")));
+#if defined(COMPONENT_CAT1B)
+  #include "HWConfigPsocC3.h"
+#elif defined(COMPONENT_CAT1C)
+  #include "HWConfigXmc7x.h"
+#else
+  #error No valid MCU variant supported.
 #endif
-/*******************************************************************************
-* Function Name: main
-********************************************************************************
-* Summary:
-* This is the main function.
-*
-* Parameters:
-*  void
-*
-* Return:
-*  int
-*
-*******************************************************************************/
-int main(void)
-{
-    cy_rslt_t result;
-    
-    #if defined(COMPONENT_CAT1C)// Disabled the D-CACHE for XMC7200 device. 
-    SCB_DisableDCache();
-    #endif
-    result = cybsp_init();                 /* Initialize the device and board peripherals */
-    CY_ASSERT(result == CY_RSLT_SUCCESS);  /* Board init failed. Stop program execution   */
 
-    // Initialize controller
-    HW_IFACE_ConnectFcnPointers();         /* must be called before STATE_MACHINE_Init()  */
-    STATE_MACHINE_Init();
 
-    // Enable global interrupts
-    __enable_irq();
-
-    (void) (result);
-    for (;;)
-    {
-
-    }
-}
+#endif /* MOTORCTRLHWCONFIG_H_ */

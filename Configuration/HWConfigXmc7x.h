@@ -1,13 +1,13 @@
 /******************************************************************************
-* File Name:   MotorCtrlHWConfig.h
+* File Name:   HWConfigXmc7x.h
 *
-* Description: Motor control hardware configuration header file.
+* Description: Hardware configuration header file for XMC7200 MCU.
 *
 * Related Document: See README.md
 *
 *
 *******************************************************************************
-* Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -39,13 +39,14 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#include "cyhal.h"
 #include "cybsp.h"
 #include "stdio.h"
 #include "General.h"
 
-#ifndef MOTOR_CTRL_HW_CONFIG
-#define MOTOR_CTRL_HW_CONFIG
+#ifndef HWCONFIGXMC7X_H_
+#define HWCONFIGXMC7X_H_
+
+#if defined(COMPONENT_CAT1C)
 
 /* Temperature sensor configurations */
 #define ACTIVE_TEMP_SENSOR  false        // Active IC (e.g. MCP9700T-E/TT) vs Passive NTC (e.g. NCP18WF104J03RB)
@@ -56,8 +57,15 @@ extern  TEMP_SENS_LUT_t     Temp_Sens_LUT;
 #define ADC_CS_OPAMP_GAIN    (12.0f)                 // [V/V]
 #define ADC_CS_SHUNT_RES     (10.0E-3f)                // [Ohm], cs shunt-resistor value, default
 #define ADC_CS_SETTLE_RATIO  (0.5f)                    // [], settling ratio used for single-shunt current sampling
-#define ADC_SCALE_VUVW      ((5.6f)/(56.0f+5.6f))   // [V/V] = [Ohm/Ohm]
-#define ADC_SCALE_VDC       ((5.6f)/(56.0f+5.6f))   // [V/V] = [Ohm/Ohm]
+#define ADC_SCALE_VUVW       ((5.6f)/(56.0f+5.6f))   // [V/V] = [Ohm/Ohm]
+#define ADC_SCALE_VDC        ((5.6f)/(56.0f+5.6f))   // [V/V] = [Ohm/Ohm]
+/* PWM configurations*/
+#define PWM_INVERSION        (true)
+#define PWM_TRIG_ADVANCE     (4U)        // [ticks]
+
+/* Miscellaneous BSP definitions */
+#define KIT_ID               (0x0008UL)    // For GUI's recognition of HW
+
 enum
 {
     // ADC sequence 0 results
@@ -69,6 +77,7 @@ enum
     // Totals
     ADC_SEQ_MAX = 3, ADC_SAMP_PER_SEQ_MAX = 3, ADC_MAX = 9
 };
+
 extern void* ADC_Result_Regs[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
 extern uint8_t DMA_Result_Indices[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
 extern cy_stc_dma_descriptor_t* DMA_Descriptors[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
@@ -82,11 +91,6 @@ void MCU_RoutingConfigMUXB();  // Routing ADCs, ADC0::[ISAMPA,VU,VBUS] & ADC1::[
 void MCU_EnableTimerReload();
 void MCU_DisableTimerReload();
 
-/* PWM configurations*/
-#define PWM_INVERSION       true
-#define PWM_TRIG_ADVANCE    4U        // [ticks]
-
-/* Miscellaneous BSP definitions */
-#define KIT_ID               (0x0008UL)    // For GUI's recognition of HW
-
 #endif
+
+#endif /* HWCONFIGXMC7X_H_ */

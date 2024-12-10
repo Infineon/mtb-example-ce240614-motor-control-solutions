@@ -1,24 +1,26 @@
 # Motor control demo
 
-This code example demonstrates the sensorless and sensored solutions using the Infineon's XMC7200 MCU. Code example includes the following solutions.
+This code example demonstrates the sensorless and sensored solutions using the Infineon's MCUs. Code example includes the following solutions.
 - Sensorless PMSM FOC with 3-shunt
 - Sensorless PMSM FOC with 1-shunt
 - Hall sensor-based PMSM FOC
+- Encoder-based PMSM FOC (Supported for PSOC Control C3 MCU)
 - Hall sensor-based Trapezoidal Block Commutation (TBC)
 
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ce240614-motor-control-solutions)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDA2MTQiLCJTcGVjIE51bWJlciI6IjAwMi00MDYxNCIsIkRvYyBUaXRsZSI6Ik1vdG9yIGNvbnRyb2wgZGVtbyIsInJpZCI6InByYXNoYW50YWJoaSIsIkRvYyB2ZXJzaW9uIjoiMS4wLjAiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDA2MTQiLCJTcGVjIE51bWJlciI6IjAwMi00MDYxNCIsIkRvYyBUaXRsZSI6Ik1vdG9yIGNvbnRyb2wgZGVtbyIsInJpZCI6InByYXNoYW50YWJoaSIsIkRvYyB2ZXJzaW9uIjoiMS4wLjEiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
 
 
 ## Requirements
 
 - [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.3 or later
-- Board support package (BSP) minimum required version: 2.2.0 
+- Board support package (BSP) minimum required version:
+  - XMC7200 MCU: 2.2.0 
+  - PSOC&trade; Control C3 MCU: 1.0.3
 - Programming language: C
-- Associated parts: [XMC7200D-F176K8384](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/xmc7200d-f176k8384aa/)
-
+- Associated parts: [XMC7200D-F176K8384](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/xmc7200d-f176k8384aa/) [All PSOC&trade; Control C3 MCUs]
 
 ## Supported toolchains (make variable 'TOOLCHAIN')
 
@@ -29,14 +31,11 @@ This code example demonstrates the sensorless and sensored solutions using the I
 ## Supported kits (make variable 'TARGET')
 
 - [KIT_XMC7200_DC_V1 Motor Control Card](https://www.infineon.com/KIT_XMC7200_DC_V1) (`KIT_XMC7200_DC_V1`) – Default value of `TARGET`
+- [KIT_PSC3M5_CC2 Motor Control Card](https://www.infineon.com/KIT_PSC3M5_CC2) (`KIT_PSC3M5_CC2`)
 
 
 ## Hardware setup
 
-**Figure 1. KIT_XMC7200_DC_V1 Motor Control Card**
-
-![](images/kit-xmc7200-dc-v1-motor-control-card-details.png)
-   
 The motor control setup includes:
 
 -  XMC7200 Motor Control Card "KIT_XMC7200_DC_V1"
@@ -47,7 +46,7 @@ The motor control setup includes:
 -  24 V/1 A AC-DC power adapter
 
 
-**Figure 2. KIT_XMC7200_MC1 setup**
+**Figure 1. KIT_XMC7200_MC1 setup**
 
 ![](images/complete-setup-with-motor.png)
 
@@ -174,7 +173,7 @@ For more details, see the [ModusToolbox&trade; tools package user guide](https:/
 
 ## Operation
 
-1. Connect the KIT_XMC7200_DC_V1 Motor Control Card and power board using the adapter board as shown in **Figure 2** in the [Hardware setup](#hardware-setup) section.
+1. Connect the KIT_XMC7200_DC_V1 Motor Control Card and power board using the adapter board as shown in **Figure 1** in the [Hardware setup](#hardware-setup) section.
 
 2. Ensure that the input voltage selection jumper (X20) is set to 2-3 position (V5V) in the control board.
 
@@ -228,7 +227,7 @@ For more details, see the [ModusToolbox&trade; tools package user guide](https:/
 
 To launch the GUI, double-click on **ModusToolbox&trade; Motor Suite** in the **Quick Panel** of ModusToolbox&trade; IDE. 
    
-**Figure 3. Launch ModusToolbox&trade; Motor Suite**
+**Figure 2. Launch ModusToolbox&trade; Motor Suite**
 
 ![](images/launch-motor-suite.png)
 
@@ -237,7 +236,7 @@ To launch the GUI, double-click on **ModusToolbox&trade; Motor Suite** in the **
 1. Select **XMC7200D-F176K8384** setup and **RFO** from the dropdown menu. 
 2. Select **New Project**, it will create a new GUI project for the XMC7200D-F176K8384 device.
 
-**Figure 4. Getting started**
+**Figure 3. Getting started**
 
 ![](images/open-new-project.png)
    
@@ -247,7 +246,7 @@ To launch the GUI, double-click on **ModusToolbox&trade; Motor Suite** in the **
 2. Flash the *hex* and *elf* file by selecting the **Flash Firmware** option.
 3. Select the **Test Bench** icon on the left panel to open the **Test Bench** window.
 
-**Figure 5. GUI - Configurator**
+**Figure 4. GUI - Configurator**
 
 ![](images/gui-configurator-view.png)
 
@@ -273,7 +272,7 @@ Test Bench provides the option to control and monitor the motor parameters. Ensu
 
    - Switch off for speed control of the motor by using the "Target Set" slider in the GUI (software).
 
-**Figure 6. GUI - Test Bench**
+**Figure 5. GUI - Test Bench**
 
 ![](images/gui-test-bench-view.png)
    
@@ -283,7 +282,7 @@ Test Bench provides the option to control and monitor the motor parameters. Ensu
 ModusToolbox&trade; Motor Suite supports a high-speed oscilloscope to monitor any firmware variable. There are four channels available to monitor four variables at a time. <br>
 In the oscilloscope window, configure the **Divider** value and select **AutoScale** to get the optimum resolution.
 
-**Figure 7. GUI - Oscilloscope**
+**Figure 6. GUI - Oscilloscope**
 
 ![](images/oscilloscope.png)
    
@@ -324,7 +323,7 @@ There are also common code blocks among all build configurations that are always
 
 After selecting the control type through build configurations, choose the *controlled entity*, *feedback type*, and *startup method* by assigning the corresponding parameters either in the code before compilation or at runtime through the GUI:
 
-**Figure 8. Control methods**
+**Figure 7. Control methods**
 
 ![](images/control-methods.png)
 
@@ -342,7 +341,7 @@ Code examples  | [Using ModusToolbox&trade;](https://github.com/Infineon/Code-Ex
 Device documentation | [XMC7200 MCU datasheets](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/) <br> [XMC7200 MCU reference manuals](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/)
 Development kits | Select your kits from the [Evaluation board finder](https://www.infineon.com/cms/en/design-support/finder-selection-tools/product-finder/evaluation-board).
 Libraries on GitHub  | [mtb-pdl-cat1](https://github.com/Infineon/mtb-pdl-cat1) – Peripheral Driver Library (PDL) <br> [mtb-hal-cat1](https://github.com/Infineon/mtb-hal-cat1) – Hardware Abstraction Layer (HAL) library <br> [retarget-io](https://github.com/Infineon/retarget-io) – Utility library to retarget STDIO messages to a UART port
-Tools  | [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) – ModusToolbox&trade; software is a collection of easy-to-use libraries and tools enabling rapid development with Infineon MCUs for applications ranging from wireless and cloud-connected systems, edge AI/ML, embedded sense and control, to wired USB connectivity using PSoC&trade; Industrial/IoT MCUs, AIROC&trade; Wi-Fi and Bluetooth&reg; connectivity devices, XMC&trade; Industrial MCUs, and EZ-USB&trade;/EZ-PD&trade; wired connectivity controllers. ModusToolbox&trade; incorporates a comprehensive set of BSPs, HAL, libraries, configuration tools, and provides support for industry-standard IDEs to fast-track your embedded application development.
+Tools  | [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) – ModusToolbox&trade; software is a collection of easy-to-use libraries and tools enabling rapid development with Infineon MCUs for applications ranging from wireless and cloud-connected systems, edge AI/ML, embedded sense and control, to wired USB connectivity using PSOC&trade; Industrial/IoT MCUs, AIROC&trade; Wi-Fi and Bluetooth&reg; connectivity devices, XMC&trade; Industrial MCUs, and EZ-USB&trade;/EZ-PD&trade; wired connectivity controllers. ModusToolbox&trade; incorporates a comprehensive set of BSPs, HAL, libraries, configuration tools, and provides support for industry-standard IDEs to fast-track your embedded application development.
 
 <br>
 
@@ -358,7 +357,8 @@ Document title: *CE240614* – *Motor control demo*
 
  Version | Description of change
  ------- | ---------------------
- 1.0.0   | New code example
+ 1.0.0   | New code example supported XMC7200D MCU
+ 1.0.1   | Added support to PSOC&trade; Control C3 MCU
 <br>
 
 
@@ -373,4 +373,4 @@ The Bluetooth&reg; word mark and logos are registered trademarks owned by Blueto
 <br>
 TO THE EXTENT PERMITTED BY APPLICABLE LAW, CYPRESS MAKES NO WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, WITH REGARD TO THIS DOCUMENT OR ANY SOFTWARE OR ACCOMPANYING HARDWARE, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  No computing device can be absolutely secure.  Therefore, despite security measures implemented in Cypress hardware or software products, Cypress shall have no liability arising out of any security breach, such as unauthorized access to or use of a Cypress product. CYPRESS DOES NOT REPRESENT, WARRANT, OR GUARANTEE THAT CYPRESS PRODUCTS, OR SYSTEMS CREATED USING CYPRESS PRODUCTS, WILL BE FREE FROM CORRUPTION, ATTACK, VIRUSES, INTERFERENCE, HACKING, DATA LOSS OR THEFT, OR OTHER SECURITY INTRUSION (collectively, "Security Breach").  Cypress disclaims any liability relating to any Security Breach, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any Security Breach.  In addition, the products described in these materials may contain design defects or errors known as errata which may cause the product to deviate from published specifications. To the extent permitted by applicable law, Cypress reserves the right to make changes to this document without further notice. Cypress does not assume any liability arising out of the application or use of any product or circuit described in this document. Any information provided in this document, including any sample design information or programming code, is provided only for reference purposes.  It is the responsibility of the user of this document to properly design, program, and test the functionality and safety of any application made of this information and any resulting product.  "High-Risk Device" means any device or system whose failure could cause personal injury, death, or property damage.  Examples of High-Risk Devices are weapons, nuclear installations, surgical implants, and other medical devices.  "Critical Component" means any component of a High-Risk Device whose failure to perform can be reasonably expected to cause, directly or indirectly, the failure of the High-Risk Device, or to affect its safety or effectiveness.  Cypress is not liable, in whole or in part, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any use of a Cypress product as a Critical Component in a High-Risk Device. You shall indemnify and hold Cypress, including its affiliates, and its directors, officers, employees, agents, distributors, and assigns harmless from and against all claims, costs, damages, and expenses, arising out of any claim, including claims for product liability, personal injury or death, or property damage arising from any use of a Cypress product as a Critical Component in a High-Risk Device. Cypress products are not intended or authorized for use as a Critical Component in any High-Risk Device except to the limited extent that (i) Cypress's published data sheet for the product explicitly states Cypress has qualified the product for use in a specific High-Risk Device, or (ii) Cypress has given you advance written authorization to use the product as a Critical Component in the specific High-Risk Device and you have signed a separate indemnification agreement.
 <br>
-Cypress, the Cypress logo, and combinations thereof, ModusToolbox, PSoC, CAPSENSE, EZ-USB, F-RAM, and TRAVEO are trademarks or registered trademarks of Cypress or a subsidiary of Cypress in the United States or in other countries. For a more complete list of Cypress trademarks, visit www.infineon.com. Other names and brands may be claimed as property of their respective owners.
+Cypress, the Cypress logo, and combinations thereof, ModusToolbox, PSOC, CAPSENSE, EZ-USB, F-RAM, and TRAVEO are trademarks or registered trademarks of Cypress or a subsidiary of Cypress in the United States or in other countries. For a more complete list of Cypress trademarks, visit www.infineon.com. Other names and brands may be claimed as property of their respective owners.
