@@ -106,27 +106,16 @@ DISABLE_COMPONENTS=
 # by default, or otherwise not found by the build system.
 SOURCES=
 
+DEFINES+=$(TARGET) # define will be used in the application files.
+
 # By default the build system automatically looks in the Makefile's directory
 # tree for source code and builds it. The SOURCES variable can be used to
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
 
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/ParamsDefault*)
+CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/Params*)
 
-ifeq ($(TARGET),APP_KIT_PSC3M5_CC2)
-
-#Precompiled library selection based on control method - PSOC Control C3
-ifeq ($(CTRL),CTRL_METHOD_TBC)
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a )
-else
-ifeq ($(CTRL),CTRL_METHOD_SFO)
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
-else
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
-endif
-endif
-
-else #XMC7x
+ifeq ($(TARGET),APP_KIT_XMC7200_DC_V1)
 
 DEFINES+=RAMFUNC_ENABLE # Enable execution from RAM
 
@@ -138,6 +127,19 @@ ifeq ($(CTRL),CTRL_METHOD_SFO)
 CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
 else
 CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
+endif
+endif
+
+else #PSOC Control C3
+#Precompiled library selection based on control method - PSOC Control C3
+ifeq ($(CTRL),CTRL_METHOD_TBC)
+CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a )
+else
+ifeq ($(CTRL),CTRL_METHOD_SFO)
+CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
+else
+CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
+
 endif
 endif
 endif

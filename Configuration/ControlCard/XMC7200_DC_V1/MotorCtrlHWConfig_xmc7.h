@@ -1,7 +1,7 @@
 /******************************************************************************
-* File Name:   HWConfigPsocC3.h
+* File Name:   xmc7200_dc_v1.h
 *
-* Description: Hardware configuration header file for PSOC Control C3 MCU.
+* Description: Hardware configuration header file for XMC7200 drive card.
 *
 * Related Document: See README.md
 *
@@ -38,51 +38,53 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
+#if defined(APP_KIT_XMC7200_DC_V1)
 
 #include "cybsp.h"
 #include "stdio.h"
 #include "General.h"
 
-#ifndef HWCONFIGPSOCC3_H_
-#define HWCONFIGPSOCC3_H_
-
-#if defined(COMPONENT_CAT1B)
+#ifndef XMC7200_DC_V1_H_
+#define XMC7200_DC_V1_H_
 
 /* Temperature sensor configurations */
 #define ACTIVE_TEMP_SENSOR  false        // Active IC (e.g. MCP9700T-E/TT) vs Passive NTC (e.g. NCP18WF104J03RB)
 extern  TEMP_SENS_LUT_t     Temp_Sens_LUT;
 
 /* ADC configurations*/
-#define ADC_VREF_GAIN        ((5.0f)/(3.3f))         // [V/V], voltage-reference buffer gain (e.g. scaling 5.0V down to 3.3V)
-#define ADC_CS_OPAMP_GAIN   (12.0f)                 // [V/V]
-#define ADC_CS_SHUNT_RES    (10.0E-3f)                // [Ohm], cs shunt-resistor value, default
-#define ADC_CS_SETTLE_RATIO    (0.8f)                    // [], settling ratio used for single-shunt current sampling
-#define ADC_SCALE_VUVW      ((5.6f)/(56.0f+5.6f))   // [V/V] = [Ohm/Ohm]
-#define ADC_SCALE_VDC       ((5.6f)/(56.0f+5.6f))   // [V/V] = [Ohm/Ohm]
+#define ADC_VREF_GAIN        (1.0f)                  // [V/V], voltage-reference buffer gain (e.g. scaling 5.0V down to 3.3V)
+#define ADC_CS_OPAMP_GAIN    (12.0f)                 // [V/V]
+#define ADC_CS_SHUNT_RES     (10.0E-3f)                // [Ohm], cs shunt-resistor value, default
+#define ADC_CS_SETTLE_RATIO  (0.5f)                    // [], settling ratio used for single-shunt current sampling
+#define ADC_SCALE_VUVW       ((5.6f)/(56.0f+5.6f))   // [V/V] = [Ohm/Ohm]
+#define ADC_SCALE_VDC        ((5.6f)/(56.0f+5.6f))   // [V/V] = [Ohm/Ohm]
 /* PWM configurations*/
-#define PWM_INVERSION       (false)
-#define PWM_TRIG_ADVANCE    (0U)        // [ticks]
+#define PWM_INVERSION        (true)
+#define PWM_TRIG_ADVANCE     (4U)        // [ticks]
 
 /* Miscellaneous BSP definitions */
-#define KIT_ID                (0x0009UL)    // For GUI's recognition of HW
+#define KIT_ID               (0x0008UL)    // For GUI's recognition of HW
 
 enum
 {
     // ADC sequence 0 results
-    ADC_ISAMPA = 0, ADC_ISAMPC = 1, ADC_VBUS = 2, ADC_TEMP = 3, ADC_VV = 4,
-    // ADC sequence 1 results
-    ADC_ISAMPB = 5, ADC_ISAMPD = 6, ADC_VPOT = 7, ADC_VU = 8,   ADC_VW = 9,
+    ADC_ISAMPA = 0, ADC_VU = 1, ADC_VBUS = 2,
+    // ADC sequence 1 results:
+    ADC_ISAMPB = 3, ADC_VV = 4, ADC_VPOT = 5,
+    // ADC sequence 2 results:
+    ADC_ISAMPC = 6, ADC_VW = 7, ADC_TEMP = 8,
     // Totals
-    ADC_SEQ_MAX = 2, ADC_SAMP_PER_SEQ_MAX = 5, ADC_MAX = 10
+    ADC_SEQ_MAX = 3, ADC_SAMP_PER_SEQ_MAX = 3, ADC_MAX = 9
 };
+
 extern void* ADC_Result_Regs[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
 extern uint8_t DMA_Result_Indices[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
 extern cy_stc_dma_descriptor_t* DMA_Descriptors[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
 extern const cy_stc_dma_descriptor_config_t* DMA_Descriptor_Configs[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
 
-// 2 simultaneous sampling ADCs
-void MCU_RoutingConfigMUXA();  // Routing ADC sequences, ADC0::[ISAMPA,ISAMPC,VBUS,TEMP,VV] & ADC1::[ISAMPB,ISAMPD,VPOT,VU,VW], {ISAMPA,ISAMPB,ISAMPC,ISAMPD}={IU,IV,IW,IDCLINKAVG}
-void MCU_RoutingConfigMUXB();  // Routing ADC sequences, ADC0::[ISAMPA,ISAMPC,VBUS,TEMP,VV] & ADC1::[ISAMPB,ISAMPD,VPOT,VU,VW], {ISAMPA,ISAMPB,ISAMPC,ISAMPD}={IDCLINK,IDCLINK,IDCLINKAVG,IDCLINKAVG}
+// 3 simultaneous sampling ADCs
+void MCU_RoutingConfigMUXA();  // Routing ADCs, ADC0::[ISAMPA,VU,VBUS] & ADC1::[ISAMPB,VV,VPOT] & ADC2::[ISAMPC,VW,TEMP], {ISAMPA,ISAMPB,ISAMPC}={IU,IV,IW}
+void MCU_RoutingConfigMUXB();  // Routing ADCs, ADC0::[ISAMPA,VU,VBUS] & ADC1::[ISAMPB,VV,VPOT] & ADC2::[ISAMPC,VW,TEMP], {ISAMPA,ISAMPB,ISAMPC}={I_DC_LINK,I_DC_LINK,-}
 
 // Enable/disable timer reloads
 void MCU_EnableTimerReload();
@@ -90,4 +92,4 @@ void MCU_DisableTimerReload();
 
 #endif
 
-#endif /* HWCONFIGPSOCC3_H_ */
+#endif /* XMC7200_DC_V1_H_ */

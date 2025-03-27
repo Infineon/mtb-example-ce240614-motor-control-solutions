@@ -42,12 +42,17 @@
 #ifndef MOTORCTRLHWCONFIG_H_
 #define MOTORCTRLHWCONFIG_H_
 
-#if defined(COMPONENT_CAT1B)
-  #include "HWConfigPsocC3.h"
-#elif defined(COMPONENT_CAT1C)
-  #include "HWConfigXmc7x.h"
+#if defined(APP_KIT_PSC3M5_CC2) //MC1 Kit
+  #include "MotorCtrlHWConfig_cc2.h"
+
+#elif defined(APP_KIT_PSC3M5_2GO) //2GO Compact Kit
+  #include "MotorCtrlHWConfig_2go.h"
+
+#elif defined(APP_KIT_XMC7200_DC_V1) //XMC7200 Motor drive card Kit
+  #include "MotorCtrlHWConfig_xmc7.h"
+
 #else
-  #error No valid MCU variant supported.
+  #error No valid variant supported.
 #endif
 
 

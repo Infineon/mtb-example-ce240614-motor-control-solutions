@@ -10,17 +10,18 @@ This code example demonstrates the sensorless and sensored solutions using the I
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ce240614-motor-control-solutions)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDA2MTQiLCJTcGVjIE51bWJlciI6IjAwMi00MDYxNCIsIkRvYyBUaXRsZSI6Ik1vdG9yIGNvbnRyb2wgZGVtbyIsInJpZCI6InByYXNoYW50YWJoaSIsIkRvYyB2ZXJzaW9uIjoiMS4wLjEiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDA2MTQiLCJTcGVjIE51bWJlciI6IjAwMi00MDYxNCIsIkRvYyBUaXRsZSI6Ik1vdG9yIGNvbnRyb2wgZGVtbyIsInJpZCI6InByYXNoYW50YWJoaSIsIkRvYyB2ZXJzaW9uIjoiMS4wLjIiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
 
 
 ## Requirements
 
-- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.3 or later
+- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.4 or later
 - Board support package (BSP) minimum required version:
-  - XMC7200 MCU: 2.2.0 
-  - PSOC&trade; Control C3 MCU: 1.0.3
+  - KIT_XMC7200_DC_V1: 2.2.0 
+  - KIT_PSC3M5_CC2: 1.0.3
+  - KIT_PSC3M5_2GO: 2.0.1
 - Programming language: C
-- Associated parts: [XMC7200D-F176K8384](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/xmc7200d-f176k8384aa/) [All PSOC&trade; Control C3 MCUs]
+- Associated parts: [XMC7200D-F176K8384](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/xmc7200d-f176k8384aa/) [All PSOC&trade; Control C3 MCUs](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/32-bit-psoc-control-arm-cortex-m33-mcu/)
 
 ## Supported toolchains (make variable 'TOOLCHAIN')
 
@@ -32,30 +33,21 @@ This code example demonstrates the sensorless and sensored solutions using the I
 
 - [KIT_XMC7200_DC_V1 Motor Control Card](https://www.infineon.com/KIT_XMC7200_DC_V1) (`KIT_XMC7200_DC_V1`) – Default value of `TARGET`
 - [KIT_PSC3M5_CC2 Motor Control Card](https://www.infineon.com/KIT_PSC3M5_CC2) (`KIT_PSC3M5_CC2`)
-
+- [KIT_PSC3M5_2GO Compact Motor Control Kit](https://www.infineon.com/KIT_PSC3M5_2GO) (`KIT_PSC3M5_2GO`)
 
 ## Hardware setup
 
-The motor control setup includes:
+Refer to the respective kit quick start guide for the hardware setup information
 
--  XMC7200 Motor Control Card "KIT_XMC7200_DC_V1"
--  Drive adapter card  
--  KITMOTORDC250W24VTOBO1 power board: 24 V, 250 W
--  USB Type-A to USB Type-C cable
--  Nanotec DB42M03 24 V BLDC motor
--  24 V/1 A AC-DC power adapter
-
-
-**Figure 1. KIT_XMC7200_MC1 setup**
-
-![](images/complete-setup-with-motor.png)
-
+-  [KIT_XMC7200_MC1 XMC7200 Complete System Motor Control Kit](https://www.infineon.com/KIT_XMC7200_MC1) (`KIT_XMC7200_MC1`)
+-  [KIT_PSC3M5_MC1 PSOC&trade; Control C3M5 Complete System Motor Control Kit](https://www.infineon.com/KIT_PSC3M5_MC1) (`KIT_PSC3M5_MC1`)
+-  [KIT_PSC3M5_2GO Compact Motor Control Kit](https://www.infineon.com/KIT_PSC3M5_2GO) (`KIT_PSC3M5_2GO`)
 
 ## Software setup
 
 See the [ModusToolbox&trade; tools package installation guide](https://www.infineon.com/ModusToolboxInstallguide) for information about installing and configuring the tools package.
 
-This example requires no additional software or tools.
+This example requires ModusToolbox&trade; Motor Suite GUI to evaluate the GUI features. It can be installed from the [Infineon Developer Center](https://www.infineon.com/idc)
 
 
 ## Using the code example
@@ -173,17 +165,9 @@ For more details, see the [ModusToolbox&trade; tools package user guide](https:/
 
 ## Operation
 
-1. Connect the KIT_XMC7200_DC_V1 Motor Control Card and power board using the adapter board as shown in **Figure 1** in the [Hardware setup](#hardware-setup) section.
+1. Connect the kit as per [Hardware setup](#hardware-setup) section.
 
-2. Ensure that the input voltage selection jumper (X20) is set to 2-3 position (V5V) in the control board.
-
-3. Ensure that all the micro switches of SW3 are on the right side for proper operation.
-
-4. Connect the motor wires to the motor terminal connector (CN3) on the power board.
-
-5. Connect the 24 V DC power supply to the DC input barrel jack (CN1) on the power board and turn on the power supply.
-
-6. Program the board using one of the following:
+2. Program the board using one of the following:
 
    <details><summary><b>Using Eclipse IDE</b></summary>
 
@@ -233,8 +217,8 @@ To launch the GUI, double-click on **ModusToolbox&trade; Motor Suite** in the **
 
 **GUI - Getting started**
 
-1. Select **XMC7200D-F176K8384** setup and **RFO** from the dropdown menu. 
-2. Select **New Project**, it will create a new GUI project for the XMC7200D-F176K8384 device.
+1. Select the **XMC7200/PSOC&trade; Control C3** kit with **RFO** from the dropdown menu. 
+2. Select **New Project**, it will create a new GUI project for the selected device.
 
 **Figure 3. Getting started**
 
@@ -336,11 +320,11 @@ Note that you can either include or bypass the current loop when using *TBC in T
 
 Resources  | Links
 -----------|----------------------------------
-Application notes  | [AN234334](https://www.infineon.com/AN234334) – Getting started with XMC7200 MCU on ModusToolbox&trade;
+Application notes  | [AN234334-Getting started with XMC7200 MCU on ModusToolbox&trade;](https://www.infineon.com/dgdl/Infineon-Getting_started_with_XMC7000_MCU_on_ModusToolbox_software-ApplicationNotes-v06_00-EN.pdf?fileId=8ac78c8c850f4bee0185a53e84147437) <br> [AN240575 - PMSM FOC using XMC7200 MCU](https://www.infineon.com/dgdl/Infineon-AN240575_PMSM_FOC_using_XMC7200_MCU-ApplicationNotes-v01_00-EN.pdf?fileId=8ac78c8c92bcf0b001930d9d205504e1) <br> [AN238329 - Getting started with PSOC Control C3 MCU on ModusToolbox&trade; software](https://www.infineon.com/dgdl/Infineon-AN238329_Getting_started_PSOC_Control_C3_ModusToolbox-ApplicationNotes-v02_00-EN.pdf?fileId=8ac78c8c92bcf0b0019393f072d813b5) <br> [AN239646 - PMSM FOC using PSOC Control C3 MCU](https://www.infineon.com/dgdl/Infineon-AN239646_PMSM_FOC_PSOC_Control_C3_MCU-ApplicationNotes-v02_00-EN.pdf?fileId=8ac78c8c93956f5001939d61c8af4b9a)
 Code examples  | [Using ModusToolbox&trade;](https://github.com/Infineon/Code-Examples-for-ModusToolbox-Software) on GitHub
-Device documentation | [XMC7200 MCU datasheets](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/) <br> [XMC7200 MCU reference manuals](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/)
+Device documentation | [XMC7200 MCU datasheets](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-industrial-microcontroller-based-on-arm-cortex-m%2F32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7%2F%23!documents%2Fdocument-group-myInfineon-49) <br> [XMC7200 MCU reference manuals](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-industrial-microcontroller-based-on-arm-cortex-m%2F32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7%2F%23!documents%2Fdocument-group-myInfineon-44) <br> [PSOC&trade; Control C3 MCU datasheets](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-psoc-arm-cortex-microcontroller%2F32-bit-psoc-control-arm-cortex-m33-mcu%2F%23!documents%2Fdocument-group-myInfineon-49) <br> [PSOC&trade; Control C3 MCU reference manuals](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-psoc-arm-cortex-microcontroller%2F32-bit-psoc-control-arm-cortex-m33-mcu%2F%23!documents%2Fdocument-group-myInfineon-57)
 Development kits | Select your kits from the [Evaluation board finder](https://www.infineon.com/cms/en/design-support/finder-selection-tools/product-finder/evaluation-board).
-Libraries on GitHub  | [mtb-pdl-cat1](https://github.com/Infineon/mtb-pdl-cat1) – Peripheral Driver Library (PDL) <br> [mtb-hal-cat1](https://github.com/Infineon/mtb-hal-cat1) – Hardware Abstraction Layer (HAL) library <br> [retarget-io](https://github.com/Infineon/retarget-io) – Utility library to retarget STDIO messages to a UART port
+Libraries on GitHub  | [mtb-pdl-cat1](https://github.com/Infineon/mtb-pdl-cat1) – Peripheral Driver Library (PDL) <br> [mtb-hal-cat1](https://github.com/Infineon/mtb-hal-cat1) – Hardware Abstraction Layer (HAL) library (XMC7200 only) <br> [retarget-io](https://github.com/Infineon/retarget-io) – Utility library to retarget STDIO messages to a UART port
 Tools  | [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) – ModusToolbox&trade; software is a collection of easy-to-use libraries and tools enabling rapid development with Infineon MCUs for applications ranging from wireless and cloud-connected systems, edge AI/ML, embedded sense and control, to wired USB connectivity using PSOC&trade; Industrial/IoT MCUs, AIROC&trade; Wi-Fi and Bluetooth&reg; connectivity devices, XMC&trade; Industrial MCUs, and EZ-USB&trade;/EZ-PD&trade; wired connectivity controllers. ModusToolbox&trade; incorporates a comprehensive set of BSPs, HAL, libraries, configuration tools, and provides support for industry-standard IDEs to fast-track your embedded application development.
 
 <br>
@@ -359,6 +343,7 @@ Document title: *CE240614* – *Motor control demo*
  ------- | ---------------------
  1.0.0   | New code example supported XMC7200D MCU
  1.0.1   | Added support to PSOC&trade; Control C3 MCU
+ 1.0.2   | Added support to PSOC&trade; Control C3 Compact Kit
 <br>
 
 

@@ -7,7 +7,7 @@
 * Related Document: See README.md
 *
 *******************************************************************************
-* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2024-2025, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -50,9 +50,17 @@
 * Global variable
 ********************************************************************************/
 /* XMC7x - GCC_ARM: EEPROM storage */
-#if defined(COMPONENT_CAT1C)
+#if defined(APP_KIT_XMC7200_DC_V1)
 uint8_t Em_Eeprom_Storage[srss_0_eeprom_0_PHYSICAL_SIZE] __attribute__ ((section(".cy_em_eeprom")));
 #endif
+
+/*******************************************************************************
+* Function prototype
+********************************************************************************/
+#if defined(APP_KIT_PSC3M5_2GO)
+void Motor_Control_POT_Control(void);
+#endif
+
 /*******************************************************************************
 * Function Name: main
 ********************************************************************************
@@ -70,7 +78,7 @@ int main(void)
 {
     cy_rslt_t result;
     
-    #if defined(COMPONENT_CAT1C)// Disabled the D-CACHE for XMC7200 device. 
+    #if defined(APP_KIT_XMC7200_DC_V1)// Disabled the D-CACHE for XMC7200 device.
     SCB_DisableDCache();
     #endif
     result = cybsp_init();                 /* Initialize the device and board peripherals */
@@ -86,6 +94,79 @@ int main(void)
     (void) (result);
     for (;;)
     {
-
+        #if defined(APP_KIT_PSC3M5_2GO)
+        Motor_Control_POT_Control();
+        #endif
     }
 }
+
+#if defined(APP_KIT_PSC3M5_2GO)
+/*******************************************************************************
+* Function Name: Motor_Control_POT_Control
+********************************************************************************
+* Summary: This function controls the pot and enable the gate drive.
+*
+* Parameters:
+*  void
+*
+* Return:
+*  void
+*
+*******************************************************************************/
+void Motor_Control_POT_Control(void)
+{
+    static bool flag;
+    static float t_min_configured;
+    static bool state_check=false;
+   /*Disable the driver when pot value is less than or equal to  5% */
+    if(params.sys.cmd.source == Internal)
+    {
+          if((sensor_iface.pot.raw >= 0.05f)) /* flag is added to allow GUI control of driver ON/OFF*/
+        {
+              if(flag == true)
+              {
+                flag = false;
+                vars.en = true;
+              }
+
+        }
+          else if(sensor_iface.pot.raw <= 0.025f )
+        {
+              flag = true;
+              vars.en = false;
+
+        }
+
+    }
+    else
+    {
+        flag = false;
+    }
+    /*Enable or disable Gate driver*/
+    Cy_GPIO_Write(EN_IPM_PORT, EN_IPM_NUM, vars.en);
+    /* Reduce the minimum time for current measurement in profile mode*/
+    if((Prof_Rot_Lock <= sm.current) && (sm.current <= Prof_Lq)&&(params.ctrl.mode == Profiler_Mode))
+    {
+       if (state_check == false)
+       {
+          MCU_EnterCriticalSection();
+          t_min_configured = params.sys.analog.shunt.hyb_mod.adc_t_min;
+          params.sys.analog.shunt.hyb_mod.adc_t_min =  (t_min_configured <=3.0f)? 0.0f:t_min_configured-3.0f;
+          params.sys.analog.shunt.hyb_mod.adc_d_min = 2.0f * params.sys.analog.shunt.hyb_mod.adc_t_min * params.sys.samp.fpwm; // [%]
+          MCU_ExitCriticalSection();
+          state_check =true;
+       }
+    }
+    else
+    {
+      if(state_check ==true)
+      {
+        MCU_EnterCriticalSection();
+        params.sys.analog.shunt.hyb_mod.adc_t_min =t_min_configured;
+        params.sys.analog.shunt.hyb_mod.adc_d_min = 2.0f * params.sys.analog.shunt.hyb_mod.adc_t_min * params.sys.samp.fpwm; // [%]
+        MCU_ExitCriticalSection();
+      }
+      state_check =false;
+    }
+}
+#endif

@@ -1,7 +1,7 @@
 /******************************************************************************
-* File Name:   HWConfigXmc7x.c
+* File Name:   xmc7200_dc_v1.c
 *
-* Description: Motor control hardware configuration file for XMC7200 MCU.
+* Description: Motor control hardware configuration file for XMC7200 drive card.
 *
 * Related Document: See README.md
 *
@@ -38,10 +38,10 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
+#if defined(APP_KIT_XMC7200_DC_V1)
 
-#include <Configuration/HWConfigXmc7x.h>
+#include "MotorCtrlHWConfig_xmc7.h"
 
-#if defined(COMPONENT_CAT1C)
 TEMP_SENS_LUT_t   Temp_Sens_LUT   =
 {
     .step = 1.0f / (TEMP_SENS_LUT_WIDTH + 1.0f),    // [%], normalized voltage wrt Vcc
@@ -112,5 +112,6 @@ void MCU_EnableTimerReload()
       (_VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT0, CY_TCPWM_CNT_TRIGGER_ON_OVERFLOW) |
        _VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT1, CY_TCPWM_CNT_TRIGGER_ON_DISABLED));
 }
+
 
 #endif

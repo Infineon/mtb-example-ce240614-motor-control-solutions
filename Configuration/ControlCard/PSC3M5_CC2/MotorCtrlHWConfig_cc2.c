@@ -1,7 +1,7 @@
 /******************************************************************************
-* File Name:   HWConfigPsocC3.c
+* File Name:   psc3m5_cc2.c
 *
-* Description: Motor control hardware configuration file for PSOC Control C3.
+* Description: Motor control hardware configuration file for PSOC Control C3 CC2 Drive card.
 *
 * Related Document: See README.md
 *
@@ -38,10 +38,9 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
+#if defined(APP_KIT_PSC3M5_CC2)
 
-#include <Configuration/HWConfigPsocC3.h>
-
-#if defined(COMPONENT_CAT1B)
+#include "MotorCtrlHWConfig_cc2.h"
 
 TEMP_SENS_LUT_t   Temp_Sens_LUT   =
 {
@@ -168,3 +167,4 @@ void MCU_EnableTimerReload()
 }
 
 #endif
+
