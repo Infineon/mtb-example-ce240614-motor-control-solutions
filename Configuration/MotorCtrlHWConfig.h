@@ -48,7 +48,7 @@
 #elif defined(APP_KIT_PSC3M5_2GO) //2GO Compact Kit
   #include "MotorCtrlHWConfig_2go.h"
 
-#elif defined(APP_KIT_XMC7200_DC_V1) //XMC7200 Motor drive card Kit
+#elif defined(APP_KIT_XMC7200_DC_V1) || defined(APP_KIT_TRAVEO_T2G_B_H_MC1) //XMC7200/T2G-B-H Motor drive card Kit
   #include "MotorCtrlHWConfig_xmc7.h"
 
 #else

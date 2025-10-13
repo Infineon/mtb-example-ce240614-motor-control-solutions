@@ -130,6 +130,21 @@ CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_C
 endif
 endif
 
+else ifeq ($(TARGET),APP_KIT_TRAVEO_T2G_B_H_MC1)
+
+DEFINES+=RAMFUNC_ENABLE # Enable execution from RAM
+
+#Precompiled library selection based on control method - T2G
+ifeq ($(CTRL),CTRL_METHOD_TBC)
+CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a )
+else
+ifeq ($(CTRL),CTRL_METHOD_SFO)
+CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
+else
+CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
+endif
+endif
+
 else #PSOC Control C3
 #Precompiled library selection based on control method - PSOC Control C3
 ifeq ($(CTRL),CTRL_METHOD_TBC)

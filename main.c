@@ -49,8 +49,8 @@
 /*******************************************************************************
 * Global variable
 ********************************************************************************/
-/* XMC7x - GCC_ARM: EEPROM storage */
-#if defined(APP_KIT_XMC7200_DC_V1)
+/* XMC7x/T2G - GCC_ARM: EEPROM storage */
+#if defined(APP_KIT_XMC7200_DC_V1) || defined(APP_KIT_TRAVEO_T2G_B_H_MC1)
 uint8_t Em_Eeprom_Storage[srss_0_eeprom_0_PHYSICAL_SIZE] __attribute__ ((section(".cy_em_eeprom")));
 #endif
 
@@ -78,7 +78,7 @@ int main(void)
 {
     cy_rslt_t result;
     
-    #if defined(APP_KIT_XMC7200_DC_V1)// Disabled the D-CACHE for XMC7200 device.
+    #if defined(APP_KIT_XMC7200_DC_V1) || defined(APP_KIT_TRAVEO_T2G_B_H_MC1) // Disabled the D-CACHE for XMC7200/T2G-B-H device.
     SCB_DisableDCache();
     #endif
     result = cybsp_init();                 /* Initialize the device and board peripherals */

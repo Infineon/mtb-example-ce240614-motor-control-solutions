@@ -31,7 +31,7 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#if defined(APP_KIT_XMC7200_DC_V1)
+#if defined(APP_KIT_XMC7200_DC_V1) || defined(APP_KIT_TRAVEO_T2G_B_H_MC1)
 
 #include "Controller.h"
 
@@ -39,7 +39,7 @@
 static bool DummyFlashWrite(PARAMS_t* ram_data) { return true; }
 static bool DummyFlashRead(PARAMS_ID_t id, PARAMS_t* ram_data) { return false; };
 #define     ADC_CS_SHUNT_RES    (10.0E-3f)
-#define     KIT_ID                (0x0006UL)        // Reserved for PSOC6 HW.
+#define     KIT_ID                (0x000EUL)        // Reserved for PSOC6 HW.
 #define     ADC_CS_OPAMP_GAIN   (12.0f)
 #else
 #include "MotorCtrlHWConfig_xmc7.h"

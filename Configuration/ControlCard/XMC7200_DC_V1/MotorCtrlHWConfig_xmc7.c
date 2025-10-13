@@ -1,7 +1,7 @@
 /******************************************************************************
 * File Name:   xmc7200_dc_v1.c
 *
-* Description: Motor control hardware configuration file for XMC7200 drive card.
+* Description: Motor control hardware configuration file for XMC7200/T2G-B-H drive card.
 *
 * Related Document: See README.md
 *
@@ -38,7 +38,7 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
-#if defined(APP_KIT_XMC7200_DC_V1)
+#if defined(APP_KIT_XMC7200_DC_V1) || defined(APP_KIT_TRAVEO_T2G_B_H_MC1)
 
 #include "MotorCtrlHWConfig_xmc7.h"
 

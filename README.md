@@ -10,7 +10,7 @@ This code example demonstrates the sensorless and sensored solutions using the I
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ce240614-motor-control-solutions)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDA2MTQiLCJTcGVjIE51bWJlciI6IjAwMi00MDYxNCIsIkRvYyBUaXRsZSI6Ik1vdG9yIGNvbnRyb2wgZGVtbyIsInJpZCI6InByYXNoYW50YWJoaSIsIkRvYyB2ZXJzaW9uIjoiMS4wLjIiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDA2MTQiLCJTcGVjIE51bWJlciI6IjAwMi00MDYxNCIsIkRvYyBUaXRsZSI6Ik1vdG9yIGNvbnRyb2wgZGVtbyIsInJpZCI6InByYXNoYW50YWJoaSIsIkRvYyB2ZXJzaW9uIjoiMS4wLjMiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
 
 
 ## Requirements
@@ -20,8 +20,10 @@ This code example demonstrates the sensorless and sensored solutions using the I
   - KIT_XMC7200_DC_V1: 2.2.0 
   - KIT_PSC3M5_CC2: 1.0.3
   - KIT_PSC3M5_2GO: 2.0.1
+  - KIT_TRAVEO_T2G_B_H_MC1: 1.0.0
 - Programming language: C
-- Associated parts: [XMC7200D-F176K8384](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/xmc7200d-f176k8384aa/) [All PSOC&trade; Control C3 MCUs](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/32-bit-psoc-control-arm-cortex-m33-mcu/)
+- Associated parts: [XMC7200D-F176K8384](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/xmc7200d-f176k8384aa/) [All PSOC&trade; Control C3 MCUs](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/32-bit-psoc-control-arm-cortex-m33-mcu/) 
+[TRAVEO&trade; T2G CYT4BF Series](https://www.infineon.com/cms/en/product/microcontroller/32-bit-traveo-t2g-arm-cortex-microcontroller/32-bit-traveo-t2g-arm-cortex-for-body/traveo-t2g-cyt4bf-series/)
 
 ## Supported toolchains (make variable 'TOOLCHAIN')
 
@@ -217,7 +219,7 @@ To launch the GUI, double-click on **ModusToolbox&trade; Motor Suite** in the **
 
 **GUI - Getting started**
 
-1. Select the **XMC7200/PSOC&trade; Control C3** kit with **RFO** from the dropdown menu. 
+1. Select the **XMC7200/PSOC&trade; Control C3/TRAVEO&trade; T2G CYT4BF** kit with **RFO** from the dropdown menu. 
 2. Select **New Project**, it will create a new GUI project for the selected device.
 
 **Figure 3. Getting started**
@@ -293,7 +295,7 @@ Follow the instructions in your preferred IDE.
 
 ## Design and implementation
 
-This code example is created using the XMC7200D MCU resources and Infineon motor control library (middleware asset).
+This code example is created using the XMC7200D/TRAVEO&trade; T2G CYT4BF MCU resources and Infineon motor control library (middleware asset).
 
 There are three major control types that are supported, namely:
 - Rotor Field Oriented (RFO) control
@@ -320,11 +322,11 @@ Note that you can either include or bypass the current loop when using *TBC in T
 
 Resources  | Links
 -----------|----------------------------------
-Application notes  | [AN234334-Getting started with XMC7200 MCU on ModusToolbox&trade;](https://www.infineon.com/dgdl/Infineon-Getting_started_with_XMC7000_MCU_on_ModusToolbox_software-ApplicationNotes-v06_00-EN.pdf?fileId=8ac78c8c850f4bee0185a53e84147437) <br> [AN240575 - PMSM FOC using XMC7200 MCU](https://www.infineon.com/dgdl/Infineon-AN240575_PMSM_FOC_using_XMC7200_MCU-ApplicationNotes-v01_00-EN.pdf?fileId=8ac78c8c92bcf0b001930d9d205504e1) <br> [AN238329 - Getting started with PSOC Control C3 MCU on ModusToolbox&trade; software](https://www.infineon.com/dgdl/Infineon-AN238329_Getting_started_PSOC_Control_C3_ModusToolbox-ApplicationNotes-v02_00-EN.pdf?fileId=8ac78c8c92bcf0b0019393f072d813b5) <br> [AN239646 - PMSM FOC using PSOC Control C3 MCU](https://www.infineon.com/dgdl/Infineon-AN239646_PMSM_FOC_PSOC_Control_C3_MCU-ApplicationNotes-v02_00-EN.pdf?fileId=8ac78c8c93956f5001939d61c8af4b9a)
+Application notes  | [AN234334 - Getting started with XMC7200 MCU on ModusToolbox&trade;](https://www.infineon.com/dgdl/Infineon-Getting_started_with_XMC7000_MCU_on_ModusToolbox_software-ApplicationNotes-v06_00-EN.pdf?fileId=8ac78c8c850f4bee0185a53e84147437) <br> [AN240575 - PMSM FOC using XMC7200 MCU](https://www.infineon.com/dgdl/Infineon-AN240575_PMSM_FOC_using_XMC7200_MCU-ApplicationNotes-v01_00-EN.pdf?fileId=8ac78c8c92bcf0b001930d9d205504e1) <br> [AN238329 - Getting started with PSOC Control C3 MCU on ModusToolbox&trade; software](https://www.infineon.com/dgdl/Infineon-AN238329_Getting_started_PSOC_Control_C3_ModusToolbox-ApplicationNotes-v02_00-EN.pdf?fileId=8ac78c8c92bcf0b0019393f072d813b5) <br> [AN239646 - PMSM FOC using PSOC Control C3 MCU](https://www.infineon.com/dgdl/Infineon-AN239646_PMSM_FOC_PSOC_Control_C3_MCU-ApplicationNotes-v02_00-EN.pdf?fileId=8ac78c8c93956f5001939d61c8af4b9a) <br> [AN235305 - Getting started with TRAVEO&trade; T2G family MCUs in ModusToolbox&trade;](https://www.infineon.com/dgdl/?fileId=8ac78c8c8b6555fe018c1fddd8a72801)
 Code examples  | [Using ModusToolbox&trade;](https://github.com/Infineon/Code-Examples-for-ModusToolbox-Software) on GitHub
-Device documentation | [XMC7200 MCU datasheets](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-industrial-microcontroller-based-on-arm-cortex-m%2F32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7%2F%23!documents%2Fdocument-group-myInfineon-49) <br> [XMC7200 MCU reference manuals](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-industrial-microcontroller-based-on-arm-cortex-m%2F32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7%2F%23!documents%2Fdocument-group-myInfineon-44) <br> [PSOC&trade; Control C3 MCU datasheets](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-psoc-arm-cortex-microcontroller%2F32-bit-psoc-control-arm-cortex-m33-mcu%2F%23!documents%2Fdocument-group-myInfineon-49) <br> [PSOC&trade; Control C3 MCU reference manuals](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-psoc-arm-cortex-microcontroller%2F32-bit-psoc-control-arm-cortex-m33-mcu%2F%23!documents%2Fdocument-group-myInfineon-57)
+Device documentation | [XMC7200 MCU datasheets](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-industrial-microcontroller-based-on-arm-cortex-m%2F32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7%2F%23!documents%2Fdocument-group-myInfineon-49) <br> [XMC7200 MCU reference manuals](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-industrial-microcontroller-based-on-arm-cortex-m%2F32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7%2F%23!documents%2Fdocument-group-myInfineon-44) <br> [PSOC&trade; Control C3 MCU datasheets](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-psoc-arm-cortex-microcontroller%2F32-bit-psoc-control-arm-cortex-m33-mcu%2F%23!documents%2Fdocument-group-myInfineon-49) <br> [PSOC&trade; Control C3 MCU reference manuals](https://www.infineon.com/sec/login?ret=https%3A%2F%2Fwww.infineon.com%2Fcms%2Fen%2Fproduct%2Fmicrocontroller%2F32-bit-psoc-arm-cortex-microcontroller%2F32-bit-psoc-control-arm-cortex-m33-mcu%2F%23!documents%2Fdocument-group-myInfineon-57) <br> [TRAVEO&trade; T2G CYT4BF series datasheets](https://www.infineon.com/dgdl/?fileId=5546d46275b79adb0175dc8387f93228) <br> [TRAVEO&trade; T2G MCU Body family architecture and registers reference manuals](https://www.infineon.com/cms/en/product/microcontroller/32-bit-traveo-t2g-arm-cortex-microcontroller/32-bit-traveo-t2g-arm-cortex-for-body/#!documents)
 Development kits | Select your kits from the [Evaluation board finder](https://www.infineon.com/cms/en/design-support/finder-selection-tools/product-finder/evaluation-board).
-Libraries on GitHub  | [mtb-pdl-cat1](https://github.com/Infineon/mtb-pdl-cat1) – Peripheral Driver Library (PDL) <br> [mtb-hal-cat1](https://github.com/Infineon/mtb-hal-cat1) – Hardware Abstraction Layer (HAL) library (XMC7200 only) <br> [retarget-io](https://github.com/Infineon/retarget-io) – Utility library to retarget STDIO messages to a UART port
+Libraries on GitHub  | [mtb-pdl-cat1](https://github.com/Infineon/mtb-pdl-cat1) – Peripheral Driver Library (PDL) <br> [mtb-hal-cat1](https://github.com/Infineon/mtb-hal-cat1) – Hardware Abstraction Layer (HAL) library (XMC7200/TRAVEO&trade; T2G CYT4BF only) <br> [retarget-io](https://github.com/Infineon/retarget-io) – Utility library to retarget STDIO messages to a UART port
 Tools  | [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) – ModusToolbox&trade; software is a collection of easy-to-use libraries and tools enabling rapid development with Infineon MCUs for applications ranging from wireless and cloud-connected systems, edge AI/ML, embedded sense and control, to wired USB connectivity using PSOC&trade; Industrial/IoT MCUs, AIROC&trade; Wi-Fi and Bluetooth&reg; connectivity devices, XMC&trade; Industrial MCUs, and EZ-USB&trade;/EZ-PD&trade; wired connectivity controllers. ModusToolbox&trade; incorporates a comprehensive set of BSPs, HAL, libraries, configuration tools, and provides support for industry-standard IDEs to fast-track your embedded application development.
 
 <br>
@@ -344,6 +346,7 @@ Document title: *CE240614* – *Motor control demo*
  1.0.0   | New code example supported XMC7200D MCU
  1.0.1   | Added support to PSOC&trade; Control C3 MCU
  1.0.2   | Added support to PSOC&trade; Control C3 Compact Kit
+ 1.0.3   | Added support to TRAVEO&trade; T2G CYT4BF MCU
 <br>
 
 
