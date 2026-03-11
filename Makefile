@@ -85,6 +85,21 @@ CTRL=CTRL_METHOD_RFO
 
 DEFINES+=$(CTRL)
 
+# Configure number of motor drives, Supported values : 1
+# Number motor driver suppored varies on target deviced  
+DEFINES+=MOTOR_CTRL_NO_OF_MOTOR=0x01
+
+# Configure number of oscilloscope channels in the "Motor Suite"
+#
+# Supported values : 0 - 8, value 0 will disabled oscilloscope 
+DEFINES+=MOTOR_CTRL_NO_OF_SCOPE_CHANNELS=0x4
+# Enable follwoing add-on function by remove "MOTOR_CTRL_DISABLE_ADDON_FEATURES" definition
+# 
+# Motor phase U,V and W voltage measurement; only used in "Dyno" mode
+# Torque calculation in RFO control method; used in load profiler
+# Addition gain and offset configuration for ADC input
+#DEFINES+=MOTOR_CTRL_DISABLE_ADDON_FEATURES
+
 # Enable optional code that is ordinarily disabled by default.
 #
 # Available components depend on the specific targeted hardware and firmware
@@ -96,7 +111,7 @@ DEFINES+=$(CTRL)
 # added to the build
 #
 COMPONENTS=
-
+COMPONENTS+=$(CTRL)
 # Like COMPONENTS, but disable optional code that was enabled by default.
 DISABLE_COMPONENTS=
 
@@ -113,50 +128,12 @@ DEFINES+=$(TARGET) # define will be used in the application files.
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
 
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/Params*)
+#DEFINES+=RAMFUNC_ENABLE # Enable execution from RAM
 
 ifeq ($(TARGET),APP_KIT_XMC7200_DC_V1)
-
 DEFINES+=RAMFUNC_ENABLE # Enable execution from RAM
-
-#Precompiled library selection based on control method - XMC7x
-ifeq ($(CTRL),CTRL_METHOD_TBC)
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a )
-else
-ifeq ($(CTRL),CTRL_METHOD_SFO)
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
-else
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
-endif
-endif
-
 else ifeq ($(TARGET),APP_KIT_TRAVEO_T2G_B_H_MC1)
-
 DEFINES+=RAMFUNC_ENABLE # Enable execution from RAM
-
-#Precompiled library selection based on control method - T2G
-ifeq ($(CTRL),CTRL_METHOD_TBC)
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a )
-else
-ifeq ($(CTRL),CTRL_METHOD_SFO)
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
-else
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1C/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
-endif
-endif
-
-else #PSOC Control C3
-#Precompiled library selection based on control method - PSOC Control C3
-ifeq ($(CTRL),CTRL_METHOD_TBC)
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a )
-else
-ifeq ($(CTRL),CTRL_METHOD_SFO)
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_rfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
-else
-CY_IGNORE+=$(wildcard ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_sfo.a ../mtb_shared/motor-ctrl-lib/*/OperationalCode/COMPONENT_CAT1B/TOOLCHAIN_GCC_ARM/libcy_motor_ctrl_tbc.a )
-
-endif
-endif
 endif
 
 
@@ -172,7 +149,7 @@ VFP_SELECT=hardfp
 # NOTE: Includes and defines should use the INCLUDES and DEFINES variable
 # above.
 ifeq ($(TOOLCHAIN),GCC_ARM)
-CFLAGS=-Ofast
+CFLAGS=-Os
 CFLAGS+=-Wno-maybe-uninitialized    # This is getting rid of compiler warning when compiling PDL source file cyhal_spi.c
 endif
 

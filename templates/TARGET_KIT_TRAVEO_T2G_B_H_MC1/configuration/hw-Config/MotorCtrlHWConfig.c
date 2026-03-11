@@ -1,12 +1,4 @@
-/******************************************************************************
-* File Name:   xmc7200_dc_v1.c
-*
-* Description: Motor control hardware configuration file for XMC7200/T2G-B-H drive card.
-*
-* Related Document: See README.md
-*
-*
-*******************************************************************************
+/*******************************************************************************
 * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
@@ -38,9 +30,7 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
-#if defined(APP_KIT_XMC7200_DC_V1) || defined(APP_KIT_TRAVEO_T2G_B_H_MC1)
-
-#include "MotorCtrlHWConfig_xmc7.h"
+#include "MotorCtrlHWConfig.h"
 
 TEMP_SENS_LUT_t   Temp_Sens_LUT   =
 {
@@ -113,5 +103,3 @@ void MCU_EnableTimerReload()
        _VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT1, CY_TCPWM_CNT_TRIGGER_ON_DISABLED));
 }
 
-
-#endif

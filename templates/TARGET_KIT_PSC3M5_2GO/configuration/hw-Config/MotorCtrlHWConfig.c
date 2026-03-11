@@ -1,12 +1,4 @@
-/******************************************************************************
-* File Name:   psc3m5_2go.c
-*
-* Description: Motor control hardware configuration file for PSOC Control C3 2GO Compact kit.
-*
-* Related Document: See README.md
-*
-*
-*******************************************************************************
+/*******************************************************************************
 * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
@@ -38,9 +30,14 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
-#if defined(APP_KIT_PSC3M5_2GO)
 
-#include "MotorCtrlHWConfig_2go.h"
+#include "MotorCtrlHWConfig.h"
+
+/* MUXA : Configuration related to leg shunt current measurement */
+/* MUXB : Configuration related to single shunt current measurement */
+#define ADC_RESULT_ADDR(channel)    ((void*)CY_HPPASS_SAR_CHAN_RSLT_PTR(channel))
+#define ADC_SAMP_UNUSED             ((void*)&ADC_Result_dummy)
+volatile uint32_t ADC_Result_dummy =0;/* This variable to use to map the unconfigured channel, result pointer*/
 
 TEMP_SENS_LUT_t   Temp_Sens_LUT   =
 {
@@ -48,8 +45,6 @@ TEMP_SENS_LUT_t   Temp_Sens_LUT   =
     .step_inv = (TEMP_SENS_LUT_WIDTH + 1.0f),       // [1/%], inverse normalized voltage
     .val = {109.5f, 85.4f, 71.7f, 62.0f, 54.3f, 47.7f, 41.9f, 36.5f, 31.4f, 26.3f, 21.2f, 16.0f, 10.2f, 3.7f, -4.3f, -16.1f} // [degree C]
 };
-
-#define ADC_RESULT_ADDR(channel)    ((void*)CY_HPPASS_SAR_CHAN_RSLT_PTR(channel))
 
 static void* const ADC_Result_Regs_MUXA[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX] = \
         {{ADC_RESULT_ADDR(0), ADC_RESULT_ADDR(2), ADC_RESULT_ADDR(8), ADC_RESULT_ADDR(10), ADC_RESULT_ADDR(12)},
@@ -89,6 +84,7 @@ void MCU_RoutingConfigMUXA()
         .sampTime = CY_HPPASS_SAR_SAMP_TIME_0,
         .priority = true,
         .continuous = false,
+
     };
     const cy_stc_hppass_sar_grp_t ADC_SEQ1_Config =
     {
@@ -99,10 +95,11 @@ void MCU_RoutingConfigMUXA()
         .sampTime = CY_HPPASS_SAR_SAMP_TIME_0,
         .priority = false,
         .continuous = false,
+
+
     };
     Cy_HPPASS_SAR_GroupConfig(0U, &ADC_SEQ0_Config);
     Cy_HPPASS_SAR_GroupConfig(1U, &ADC_SEQ1_Config);
-
     Cy_HPPASS_AC_Start(0U, 1000U);
 
     for (uint8_t seq_idx=0U; seq_idx<ADC_SEQ_MAX; ++seq_idx)
@@ -151,20 +148,3 @@ void MCU_RoutingConfigMUXB()
         }
     }
 }
-
-void MCU_DisableTimerReload()
-{
-    TCPWM_GRP_CNT_TR_OUT_SEL(SYNC_ISR1_HW, TCPWM_GRP_CNT_GET_GRP(SYNC_ISR1_NUM), SYNC_ISR1_NUM) =
-      (_VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT0, CY_TCPWM_CNT_TRIGGER_ON_DISABLED) |
-       _VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT1, CY_TCPWM_CNT_TRIGGER_ON_DISABLED));
-}
-
-void MCU_EnableTimerReload()
-{
-    TCPWM_GRP_CNT_TR_OUT_SEL(SYNC_ISR1_HW, TCPWM_GRP_CNT_GET_GRP(SYNC_ISR1_NUM), SYNC_ISR1_NUM) =
-      (_VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT0, CY_TCPWM_CNT_TRIGGER_ON_DISABLED) |
-       _VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT1, CY_TCPWM_CNT_TRIGGER_ON_OVERFLOW));
-}
-
-#endif
-

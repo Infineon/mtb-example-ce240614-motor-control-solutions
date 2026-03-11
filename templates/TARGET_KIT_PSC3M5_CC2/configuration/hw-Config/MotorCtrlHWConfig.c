@@ -1,12 +1,4 @@
-/******************************************************************************
-* File Name:   psc3m5_cc2.c
-*
-* Description: Motor control hardware configuration file for PSOC Control C3 CC2 Drive card.
-*
-* Related Document: See README.md
-*
-*
-*******************************************************************************
+/*******************************************************************************
 * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
@@ -38,9 +30,14 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
-#if defined(APP_KIT_PSC3M5_CC2)
 
-#include "MotorCtrlHWConfig_cc2.h"
+#include "MotorCtrlHWConfig.h"
+
+/* MUXA : Configuration related to leg shunt current measurement */
+/* MUXB : Configuration related to single shunt current measurement */
+#define ADC_RESULT_ADDR(channel)    ((void*)CY_HPPASS_SAR_CHAN_RSLT_PTR(channel))
+#define ADC_SAMP_UNUSED             ((void*)&ADC_Result_dummy)
+volatile uint32_t ADC_Result_dummy =0;/* This variable to use to map the unconfigured channel, result pointer*/
 
 TEMP_SENS_LUT_t   Temp_Sens_LUT   =
 {
@@ -49,19 +46,17 @@ TEMP_SENS_LUT_t   Temp_Sens_LUT   =
     .val = {109.5f, 85.4f, 71.7f, 62.0f, 54.3f, 47.7f, 41.9f, 36.5f, 31.4f, 26.3f, 21.2f, 16.0f, 10.2f, 3.7f, -4.3f, -16.1f} // [degree C]
 };
 
-#define ADC_RESULT_ADDR(channel)    ((void*)CY_HPPASS_SAR_CHAN_RSLT_PTR(channel))
-
 static void* const ADC_Result_Regs_MUXA[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX] = \
         {{ADC_RESULT_ADDR(0), ADC_RESULT_ADDR(2), ADC_RESULT_ADDR(8), ADC_RESULT_ADDR(10), ADC_RESULT_ADDR(12)},
-         {ADC_RESULT_ADDR(1), ADC_RESULT_ADDR(4), ADC_RESULT_ADDR(9), ADC_RESULT_ADDR(11), ADC_RESULT_ADDR(20)}};
+         {ADC_RESULT_ADDR(1), ADC_RESULT_ADDR(4), ADC_RESULT_ADDR(9), ADC_SAMP_UNUSED, ADC_RESULT_ADDR(20)}};
 
 static const uint8_t DMA_Result_Indices_MUXA[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX] = \
         {{ADC_ISAMPA, ADC_ISAMPC, ADC_VU, ADC_VW,     ADC_VPOT},
          {ADC_ISAMPB, ADC_VBUS,   ADC_VV, ADC_ISAMPD, ADC_TEMP}};
 
 static void* const ADC_Result_Regs_MUXB[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX] = \
-        {{ADC_RESULT_ADDR(3), ADC_RESULT_ADDR(4), ADC_RESULT_ADDR(9),  ADC_RESULT_ADDR(11), ADC_RESULT_ADDR(12)},
-         {ADC_RESULT_ADDR(3), ADC_RESULT_ADDR(8), ADC_RESULT_ADDR(10), ADC_RESULT_ADDR(11), ADC_RESULT_ADDR(20)}};
+        {{ADC_RESULT_ADDR(3), ADC_RESULT_ADDR(4), ADC_RESULT_ADDR(9),   ADC_SAMP_UNUSED,  ADC_RESULT_ADDR(12)},
+         {ADC_RESULT_ADDR(3), ADC_RESULT_ADDR(8), ADC_RESULT_ADDR(10),  ADC_SAMP_UNUSED,  ADC_RESULT_ADDR(20)}};
 
 static const uint8_t DMA_Result_Indices_MUXB[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX] = \
         {{ADC_ISAMPA, ADC_VBUS, ADC_VV, ADC_ISAMPC, ADC_VPOT},
@@ -89,20 +84,22 @@ void MCU_RoutingConfigMUXA()
         .sampTime = CY_HPPASS_SAR_SAMP_TIME_0,
         .priority = true,
         .continuous = false,
+
     };
     const cy_stc_hppass_sar_grp_t ADC_SEQ1_Config =
     {
-        .dirSampMsk = 0xA12U,
+        .dirSampMsk = 0x212U,
         .muxSampMsk = 0x4U,
         .muxChanIdx = {0U,0U,0U,0U},
         .trig = CY_HPPASS_SAR_TRIG_1,
         .sampTime = CY_HPPASS_SAR_SAMP_TIME_0,
         .priority = false,
         .continuous = false,
+
+
     };
     Cy_HPPASS_SAR_GroupConfig(0U, &ADC_SEQ0_Config);
     Cy_HPPASS_SAR_GroupConfig(1U, &ADC_SEQ1_Config);
-
     Cy_HPPASS_AC_Start(0U, 1000U);
 
     for (uint8_t seq_idx=0U; seq_idx<ADC_SEQ_MAX; ++seq_idx)
@@ -119,7 +116,7 @@ void MCU_RoutingConfigMUXB()
 {
     const cy_stc_hppass_sar_grp_t ADC_SEQ0_Config =
     {
-        .dirSampMsk = 0xA18U,    // MUXA: 0x505U
+        .dirSampMsk = 0x218U,
         .muxSampMsk = 0x1U,
         .muxChanIdx = {0U,0U,0U,0U},
         .trig = CY_HPPASS_SAR_TRIG_0,
@@ -129,7 +126,7 @@ void MCU_RoutingConfigMUXB()
     };
     const cy_stc_hppass_sar_grp_t ADC_SEQ1_Config =
     {
-        .dirSampMsk = 0xD08U,    // MUXA: 0xA12U
+        .dirSampMsk = 0x508U,
         .muxSampMsk = 0x4U,
         .muxChanIdx = {0U,0U,0U,0U},
         .trig = CY_HPPASS_SAR_TRIG_1,
@@ -151,20 +148,3 @@ void MCU_RoutingConfigMUXB()
         }
     }
 }
-
-void MCU_DisableTimerReload()
-{
-    TCPWM_GRP_CNT_TR_OUT_SEL(SYNC_ISR1_HW, TCPWM_GRP_CNT_GET_GRP(SYNC_ISR1_NUM), SYNC_ISR1_NUM) =
-      (_VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT0, CY_TCPWM_CNT_TRIGGER_ON_DISABLED) |
-       _VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT1, CY_TCPWM_CNT_TRIGGER_ON_DISABLED));
-}
-
-void MCU_EnableTimerReload()
-{
-    TCPWM_GRP_CNT_TR_OUT_SEL(SYNC_ISR1_HW, TCPWM_GRP_CNT_GET_GRP(SYNC_ISR1_NUM), SYNC_ISR1_NUM) =
-      (_VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT0, CY_TCPWM_CNT_TRIGGER_ON_DISABLED) |
-       _VAL2FLD(TCPWM_GRP_CNT_V2_TR_OUT_SEL_OUT1, CY_TCPWM_CNT_TRIGGER_ON_OVERFLOW));
-}
-
-#endif
-

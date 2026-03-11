@@ -1,12 +1,4 @@
-/******************************************************************************
-* File Name:   MotorCtrlHWConfig.h
-*
-* Description: Motor control hardware configuration header file.
-*
-* Related Document: See README.md
-*
-*
-*******************************************************************************
+/*******************************************************************************
 * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
@@ -39,21 +31,39 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#ifndef MOTORCTRLHWCONFIG_H_
-#define MOTORCTRLHWCONFIG_H_
+#pragma once
 
-#if defined(APP_KIT_PSC3M5_CC2) //MC1 Kit
-  #include "MotorCtrlHWConfig_cc2.h"
+#include "cybsp.h"
+#include "General.h"
 
-#elif defined(APP_KIT_PSC3M5_2GO) //2GO Compact Kit
-  #include "MotorCtrlHWConfig_2go.h"
-
-#elif defined(APP_KIT_XMC7200_DC_V1) || defined(APP_KIT_TRAVEO_T2G_B_H_MC1) //XMC7200/T2G-B-H Motor drive card Kit
-  #include "MotorCtrlHWConfig_xmc7.h"
-
-#else
-  #error No valid variant supported.
-#endif
+#define MOTOR_CTRL_MOTOR0_ENABLED  (1U)  /*Always true, minimum one motor should be configured*/
+/* Temperature sensor configurations */
+#define ACTIVE_TEMP_SENSOR  false        // Active IC (e.g. MCP9700T-E/TT) vs Passive NTC (e.g. NCP18WF104J03RB)
+extern  TEMP_SENS_LUT_t     Temp_Sens_LUT;
 
 
-#endif /* MOTORCTRLHWCONFIG_H_ */
+/* PWM configurations*/
+#define PWM_INVERSION       (false)
+#define PWM_TRIG_ADVANCE    (0U)        // [ticks]
+
+/* Miscellaneous BSP definitions */
+#define KIT_ID                (0x0009UL)    // For GUI's recognition of HW
+
+enum
+{
+    // ADC sequence 0 results
+    ADC_ISAMPA = 0, ADC_ISAMPC = 1, ADC_VBUS = 2, ADC_TEMP = 3, ADC_VV = 4,
+    // ADC sequence 1 results
+    ADC_ISAMPB = 5, ADC_ISAMPD = 6, ADC_VPOT = 7, ADC_VU = 8,   ADC_VW = 9,
+    // Totals
+    ADC_SEQ_MAX = 2, ADC_SAMP_PER_SEQ_MAX = 5, ADC_MAX = 10
+};
+extern void* ADC_Result_Regs[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
+extern uint8_t DMA_Result_Indices[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
+extern cy_stc_dma_descriptor_t* DMA_Descriptors[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
+extern const cy_stc_dma_descriptor_config_t* DMA_Descriptor_Configs[ADC_SEQ_MAX][ADC_SAMP_PER_SEQ_MAX];
+
+// 2 simultaneous sampling ADCs
+void MCU_RoutingConfigMUXA();  // Routing ADC sequences, ADC0::[ISAMPA,ISAMPC,VBUS,TEMP,VV] & ADC1::[ISAMPB,ISAMPD,VPOT,VU,VW], {ISAMPA,ISAMPB,ISAMPC,ISAMPD}={IU,IV,IW,IDCLINKAVG}
+void MCU_RoutingConfigMUXB();  // Routing ADC sequences, ADC0::[ISAMPA,ISAMPC,VBUS,TEMP,VV] & ADC1::[ISAMPB,ISAMPD,VPOT,VU,VW], {ISAMPA,ISAMPB,ISAMPC,ISAMPD}={IDCLINK,IDCLINK,IDCLINKAVG,IDCLINKAVG}
+
