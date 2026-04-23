@@ -10,13 +10,13 @@ This code example demonstrates the sensorless and sensored solutions using the I
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ce240614-motor-control-solutions)
 
-[Provide feedback on this code example.](https://yourvoice.infineon.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDA2MTQiLCJTcGVjIE51bWJlciI6IjAwMi00MDYxNCIsIkRvYyBUaXRsZSI6Ik1vdG9yIGNvbnRyb2wgZGVtbyIsInJpZCI6ImFiaGlzaGVrLnByYXNoYW50QGluZmluZW9uLmNvbSIsIkRvYyB2ZXJzaW9uIjoiMi4wLjAiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
+[Provide feedback on this code example.](https://yourvoice.infineon.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDA2MTQiLCJTcGVjIE51bWJlciI6IjAwMi00MDYxNCIsIkRvYyBUaXRsZSI6Ik1vdG9yIGNvbnRyb2wgZGVtbyIsInJpZCI6ImFiaGlzaGVrLnByYXNoYW50QGluZmluZW9uLmNvbSIsIkRvYyB2ZXJzaW9uIjoiMi4xLjAiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
 
 
 ## Requirements
 
 - [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.7 or later
--  ModusToolbox&trade; Motor Suite GUI : 2.8.1 or later
+-  ModusToolbox&trade; Motor Suite GUI : 2.9.0 or later
 - Board support package (BSP) minimum required version:
   - KIT_XMC7200_DC_V1: 2.2.0 
   - KIT_PSC3M5_CC2: 1.0.3
@@ -352,6 +352,7 @@ Document title: *CE240614* – *Motor control demo*
  1.0.2   | Added support to PSOC&trade; Control C3 Compact Kit
  1.0.3   | Added support to TRAVEO&trade; T2G CYT4BF MCU
  2.0.0   | Updated as per motor control library 3.1.0
+ 2.1.0   | Updated as per motor control library 3.2.0
 <br>
 
 

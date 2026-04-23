@@ -2998,7 +2998,7 @@
                     </Block>
                     <Parameters>
                         <Param id="fracDivider" value="0"/>
-                        <Param id="intDivider" value="3"/>
+                        <Param id="intDivider" value="100"/>
                         <Param id="startOnReset" value="true"/>
                     </Parameters>
                 </Personality>
@@ -3144,7 +3144,7 @@
                     <Block location="srss[0].eeprom[0]" locked="true"/>
                     <Parameters>
                         <Param id="SelectSmallSectorWorkFlashRegion" value="false"/>
-                        <Param id="eeprom_size" value="4096"/>
+                        <Param id="eeprom_size" value="6144"/>
                         <Param id="redundantCopy" value="false"/>
                         <Param id="simpleMode" value="true"/>
                         <Param id="wearLevelingFactor" value="1"/>

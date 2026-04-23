@@ -39,6 +39,12 @@
 #define MOTOR_CTRL_MOTOR0_ENABLED  (1U)  /*Always true, minimum one motor should be configured*/
 /* Temperature sensor configurations */
 #define ACTIVE_TEMP_SENSOR  false        // Active IC (e.g. MCP9700T-E/TT) vs Passive NTC (e.g. NCP18WF104J03RB)
+#if (ACTIVE_TEMP_SENSOR)
+#define TEMP_SENSOR_1D_MV  (10.0f)  //mV
+#define TEMP_SENSOR_0D_MV  (-250.0f) //mV
+#define TEMP_SENSOR_SCALE  ((TEMP_SENSOR_1D_MV * (1 << 12U))/(ADC_VREF_GAIN * CY_CFG_PWR_VDDA_MV))
+#define TEMP_SENSOR_OFFSET ((TEMP_SENSOR_SCALE/TEMP_SENSOR_1D_MV)*TEMP_SENSOR_0D_MV) 
+#endif
 extern  TEMP_SENS_LUT_t     Temp_Sens_LUT;
 
 
@@ -48,6 +54,12 @@ extern  TEMP_SENS_LUT_t     Temp_Sens_LUT;
 
 /* Miscellaneous BSP definitions */
 #define KIT_ID                (0x0009UL)    // For GUI's recognition of HW
+/* CPU load calculation configuration */
+#define CPU_LOAD_CALC_ENABLED           (1U)      // Set to (0U) to disable CPU load measurement
+#define CPU_LOAD_CALC_TIMEOUT           (10.0f)   // [s] Overflow threshold: cpu_load set to 100% if exceeded
+#define CPU_LOAD_CALC_IDLE_TASKTIME     (0.100f)  // [s] Idle busy-wait measurement window
+#define CPU_LOAD_CALC_IDLE_TASKOVERHEAD (0.000f)  // [s] Known overhead to subtract from idle measurement
+
 
 enum
 {

@@ -1,4 +1,3 @@
-
 /*******************************************************************************
 * Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
@@ -31,6 +30,7 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
+
 #pragma once
 
 #include "cy_em_eeprom.h"
@@ -55,6 +55,7 @@ typedef struct
     uint32_t count;         // [ticks]
     uint32_t period;        // [ticks]
     float duty_cycle_coeff; // [ticks/%]
+    uint32_t deadtime;      // [ticks]
 } MCU_TIMER_t;
 
 typedef struct
@@ -78,6 +79,11 @@ typedef struct
     float inv_max_time;         // [1/sec], inverse of max. time corresponding to 100% utilization
 } MCU_TIME_CAP_t;
 
+typedef struct
+{
+  TIMER_t timer;
+  volatile float cpu_load;      // [pu] CPU load (0.0 = 0%, 1.0 = 100%), volatile: written by main loop, read by other contexts
+}MCU_CPU_CALC_t;
 typedef struct
 {
     bool init_done;
@@ -119,6 +125,7 @@ typedef struct
     MCU_TIME_CAP_t isr0_exe;
     MCU_TIME_CAP_t isr1_exe;
     MCU_ADC_MUX_t adc_mux;
+    MCU_CPU_CALC_t cpu_calc;
 } MCU_t;
 
 /** @brief Global MCU context for all motor instances. */
@@ -213,3 +220,4 @@ extern void MCU_RoutingConfigMUXB(void);  // Routing ADCs, ADC0::[ISAMP0,X,X] & 
 extern void (*MCU_RoutingConfigMUXWrap)(void);    // Either MUXA or MUXB
 
 #endif
+void MCU_CPULoadCalc(void);

@@ -42,6 +42,7 @@
 #include "HardwareIface.h"
 #include "cybsp.h"
 #include "Controller.h"
+#include "MotorCtrlHWConfig.h"
 
 /*******************************************************************************
 * Global variable
@@ -85,15 +86,31 @@ int main(void)
     HW_IFACE_ConnectFcnPointers();         /* must be called before STATE_MACHINE_Init()  */
     STATE_MACHINE_Init();
 
+#if defined(CTRL_METHOD_RFO)
+    // Disable the drive for motors configured in position control mode.
+    // MOTOR_CTRL_SetDriveEnable must be called after STATE_MACHINE_Init.
+    for (uint8_t i = 0U; i < MOTOR_CTRL_NO_OF_MOTOR; i++)
+    {
+        if (params[i].ctrl.mode == Position_Mode_FOC_Encoder_Align_Startup)
+        {
+            MOTOR_CTRL_SetDriveEnable(&motor[i], false);
+        }
+    }
+#endif
+
     // Enable global interrupts
     __enable_irq();
 
     (void) (result);
     for (;;)
     {
-        #if defined(APP_KIT_PSC3M5_2GO)
+#if defined(APP_KIT_PSC3M5_2GO)
         Motor_Control_POT_Control();
-        #endif
+#endif
+
+#if (CPU_LOAD_CALC_ENABLED)
+        MCU_CPULoadCalc();
+#endif
     }
 }
 

@@ -30,6 +30,7 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
+
 #include "MotorCtrlHWConfig.h"
 
 TEMP_SENS_LUT_t   Temp_Sens_LUT   =

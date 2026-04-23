@@ -63,6 +63,8 @@ static void MCU_PhaseVExitHighZ(void);
 static void MCU_PhaseWEnterHighZ(void);
 static void MCU_PhaseWExitHighZ(void);
 
+static void MCU_RestartKilledPWMs(void);
+
 static float MCU_TempSensorCalc(void);
 
 static void MCU_InitADCs(void);
@@ -177,8 +179,8 @@ static void MCU_InitADCs(void)
     }
 
 
-    mcu[0].adc_scale.v_uvw = (ADC_VREF_GAIN * CY_CFG_PWR_VDDA_MV * 1.0E-3f) / ((1<<12U) * ADC_SCALE_VUVW); // [V/ticks]
-    mcu[0].adc_scale.v_dc = (ADC_VREF_GAIN * CY_CFG_PWR_VDDA_MV * 1.0E-3f) / ((1<<12U) * ADC_SCALE_VDC); // [V/ticks]
+    mcu[0].adc_scale.v_uvw = (ADC_VREF_GAIN * CY_CFG_PWR_VDDA_MV * 1.0E-3f) / ((1<<12U) * motor[0].params_ptr->sys.analog.volt.vuvw_adc_scale); // [V/ticks]
+    mcu[0].adc_scale.v_dc = (ADC_VREF_GAIN * CY_CFG_PWR_VDDA_MV * 1.0E-3f) / ((1<<12U) * motor[0].params_ptr->sys.analog.volt.vdc_adc_scale); // [V/ticks]
     mcu[0].adc_scale.v_pot = 1.0f / (1<<12U); // [%/ticks]
 #if (ACTIVE_TEMP_SENSOR)
     mcu[0].adc_scale.temp_ps = (ADC_VREF_GAIN * CY_CFG_PWR_VDDA_MV * 1.0E-3f) / ((1<<12U) * TEMP_SENSOR_SCALE); // [Celsius/ticks]
@@ -189,7 +191,6 @@ static void MCU_InitADCs(void)
     // Configure ADC modules ...................................................
     Cy_HPPASS_Init(&pass_0_config);
 }
-
 
 static void MCU_InitTimers(void)
 {
@@ -204,6 +205,7 @@ static void MCU_InitTimers(void)
     mcu[0].pwm.count = 0U;
     mcu[0].pwm.period = ((uint32_t)(mcu[0].clk.tcpwm * motor[0].params_ptr->sys.samp.tpwm))&(~((uint32_t)(0x1))); // must be even
     mcu[0].pwm.duty_cycle_coeff = (float)(mcu[0].pwm.period >> 1);
+    mcu[0].pwm.deadtime = ((uint32_t)(mcu[0].clk.tcpwm * motor[0].params_ptr->sys.samp.deadtime)); 
     mcu[0].isr0.count = 0U;
     mcu[0].isr0.period = mcu[0].pwm.period * motor[0].params_ptr->sys.samp.fpwm_fs0_ratio;
     mcu[0].isr0.duty_cycle_coeff = (float)(mcu[0].isr0.period);
@@ -213,7 +215,7 @@ static void MCU_InitTimers(void)
     mcu[0].isr0_exe.sec_per_tick = (1.0f/mcu[0].clk.tcpwm); // [sec/ticks]
     mcu[0].isr0_exe.inv_max_time = motor[0].params_ptr->sys.samp.fs0; // [1/sec]
     mcu[0].isr1_exe.sec_per_tick = (1.0f/mcu[0].clk.tcpwm); // [sec/ticks]
-    mcu[0].isr1_exe.inv_max_time = motor[0].params_ptr->sys.samp.fs1; // [1/sec]  
+    mcu[0].isr1_exe.inv_max_time = motor[0].params_ptr->sys.samp.fs1; // [1/sec]A
   
     // Configure timers (TCPWMs) .....................................  
     uint32_t cc0 = PWM_INVERSION ? (mcu[0].pwm.period - PWM_TRIG_ADVANCE) : (mcu[0].pwm.period >> 1);
@@ -237,6 +239,10 @@ static void MCU_InitTimers(void)
     Cy_TCPWM_PWM_SetCompare1Val(PWM_U_HW, PWM_U_NUM, mcu[0].pwm.period >> 2); // Start with duty cycle = 50%
     Cy_TCPWM_PWM_SetCompare0BufVal(PWM_U_HW, PWM_U_NUM, mcu[0].pwm.period >> 2); // Start with duty cycle = 50%
     Cy_TCPWM_PWM_SetCompare1BufVal(PWM_U_HW, PWM_U_NUM, mcu[0].pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_PWMDeadTime(PWM_U_HW, PWM_U_NUM, mcu[0].pwm.deadtime); // set dead time value
+    Cy_TCPWM_PWM_PWMDeadTimeN(PWM_U_HW, PWM_U_NUM, mcu[0].pwm.deadtime); // set dead time value
+    Cy_TCPWM_PWM_PWMDeadTimeBuff(PWM_U_HW, PWM_U_NUM, mcu[0].pwm.deadtime); // set dead time value
+    Cy_TCPWM_PWM_PWMDeadTimeBuffN(PWM_U_HW, PWM_U_NUM, mcu[0].pwm.deadtime); // set dead time value
 
     Cy_TCPWM_PWM_Init(PWM_V_HW, PWM_V_NUM, &PWM_V_config);
     Cy_TCPWM_PWM_SetPeriod0(PWM_V_HW, PWM_V_NUM, mcu[0].pwm.period >> 1); // Triangle carrier
@@ -244,14 +250,22 @@ static void MCU_InitTimers(void)
     Cy_TCPWM_PWM_SetCompare1Val(PWM_V_HW, PWM_V_NUM, mcu[0].pwm.period >> 2); // Start with duty cycle = 50%
     Cy_TCPWM_PWM_SetCompare0BufVal(PWM_V_HW, PWM_V_NUM, mcu[0].pwm.period >> 2); // Start with duty cycle = 50%
     Cy_TCPWM_PWM_SetCompare1BufVal(PWM_V_HW, PWM_V_NUM, mcu[0].pwm.period >> 2); // Start with duty cycle = 50%
-
+    Cy_TCPWM_PWM_PWMDeadTime(PWM_V_HW, PWM_V_NUM, mcu[0].pwm.deadtime); // set dead time value
+    Cy_TCPWM_PWM_PWMDeadTimeN(PWM_V_HW, PWM_V_NUM, mcu[0].pwm.deadtime); // set dead time value
+    Cy_TCPWM_PWM_PWMDeadTimeBuff(PWM_V_HW, PWM_V_NUM, mcu[0].pwm.deadtime); // set dead time value
+    Cy_TCPWM_PWM_PWMDeadTimeBuffN(PWM_V_HW, PWM_V_NUM, mcu[0].pwm.deadtime); // set dead time value
+    
     Cy_TCPWM_PWM_Init(PWM_W_HW, PWM_W_NUM, &PWM_W_config);
     Cy_TCPWM_PWM_SetPeriod0(PWM_W_HW, PWM_W_NUM, mcu[0].pwm.period >> 1); // Triangle carrier
     Cy_TCPWM_PWM_SetCompare0Val(PWM_W_HW, PWM_W_NUM, mcu[0].pwm.period >> 2); // Start with duty cycle = 50%
     Cy_TCPWM_PWM_SetCompare1Val(PWM_W_HW, PWM_W_NUM, mcu[0].pwm.period >> 2); // Start with duty cycle = 50%
     Cy_TCPWM_PWM_SetCompare0BufVal(PWM_W_HW, PWM_W_NUM, mcu[0].pwm.period >> 2); // Start with duty cycle = 50%
     Cy_TCPWM_PWM_SetCompare1BufVal(PWM_W_HW, PWM_W_NUM, mcu[0].pwm.period >> 2); // Start with duty cycle = 50%
-
+    Cy_TCPWM_PWM_PWMDeadTime(PWM_W_HW, PWM_W_NUM, mcu[0].pwm.deadtime); // set dead time value
+    Cy_TCPWM_PWM_PWMDeadTimeN(PWM_W_HW, PWM_W_NUM, mcu[0].pwm.deadtime); // set dead time value
+    Cy_TCPWM_PWM_PWMDeadTimeBuff(PWM_W_HW, PWM_W_NUM, mcu[0].pwm.deadtime); // set dead time value
+    Cy_TCPWM_PWM_PWMDeadTimeBuffN(PWM_W_HW, PWM_W_NUM, mcu[0].pwm.deadtime); // set dead time value
+    
     cc0 = PWM_INVERSION ? (mcu[0].isr1.period - (mcu[0].pwm.period >> 1)) : mcu[0].isr1.period - 1U;
     Cy_TCPWM_PWM_Init(SYNC_ISR1_HW, SYNC_ISR1_NUM, &SYNC_ISR1_config);
     Cy_TCPWM_PWM_SetPeriod0(SYNC_ISR1_HW, SYNC_ISR1_NUM, mcu[0].isr1.period - 1U); // Sawtooth carrier
@@ -481,17 +495,23 @@ void MCU_RunISR0(void)
 
     UVW_t d_uvw_cmd_adj = PWM_INVERSION ? (UVW_t){.w=(1.0f - motor[0].vars_ptr->d_uvw_cmd.w), .v=(1.0f - motor[0].vars_ptr->d_uvw_cmd.v), .u=(1.0f - motor[0].vars_ptr->d_uvw_cmd.u)} :
                                           (UVW_t){.w=motor[0].vars_ptr->d_uvw_cmd.w, .v=motor[0].vars_ptr->d_uvw_cmd.v, .u=motor[0].vars_ptr->d_uvw_cmd.u};
-    uint32_t pwm_u_cc = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.u);
-    uint32_t pwm_v_cc = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.v);
-    uint32_t pwm_w_cc = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.w);
+    uint32_t pwm_u_cc0 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.u);
+    uint32_t pwm_v_cc0 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.v);
+    uint32_t pwm_w_cc0 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.w);
+    
+    d_uvw_cmd_adj = PWM_INVERSION ? (UVW_t){.w=(1.0f - motor[0].vars_ptr->d_uvw_cmd_fall.w), .v=(1.0f - motor[0].vars_ptr->d_uvw_cmd_fall.v), .u=(1.0f - motor[0].vars_ptr->d_uvw_cmd_fall.u)} :
+                                          (UVW_t){.w=motor[0].vars_ptr->d_uvw_cmd_fall.w, .v=motor[0].vars_ptr->d_uvw_cmd_fall.v, .u=motor[0].vars_ptr->d_uvw_cmd_fall.u};
 
-
-    Cy_TCPWM_PWM_SetCompare0BufVal(PWM_U_HW, PWM_U_NUM, pwm_u_cc);
-    Cy_TCPWM_PWM_SetCompare1BufVal(PWM_U_HW, PWM_U_NUM, pwm_u_cc);
-    Cy_TCPWM_PWM_SetCompare0BufVal(PWM_V_HW, PWM_V_NUM, pwm_v_cc);
-    Cy_TCPWM_PWM_SetCompare1BufVal(PWM_V_HW, PWM_V_NUM, pwm_v_cc);
-    Cy_TCPWM_PWM_SetCompare0BufVal(PWM_W_HW, PWM_W_NUM, pwm_w_cc);
-    Cy_TCPWM_PWM_SetCompare1BufVal(PWM_W_HW, PWM_W_NUM, pwm_w_cc);
+    
+    uint32_t pwm_u_cc1 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.u);
+    uint32_t pwm_v_cc1 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.v);
+    uint32_t pwm_w_cc1 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.w);
+    Cy_TCPWM_PWM_SetCompare0BufVal(PWM_U_HW, PWM_U_NUM, pwm_u_cc0);
+    Cy_TCPWM_PWM_SetCompare1BufVal(PWM_U_HW, PWM_U_NUM, pwm_u_cc1);
+    Cy_TCPWM_PWM_SetCompare0BufVal(PWM_V_HW, PWM_V_NUM, pwm_v_cc0);
+    Cy_TCPWM_PWM_SetCompare1BufVal(PWM_V_HW, PWM_V_NUM, pwm_v_cc1);
+    Cy_TCPWM_PWM_SetCompare0BufVal(PWM_W_HW, PWM_W_NUM, pwm_w_cc0);
+    Cy_TCPWM_PWM_SetCompare1BufVal(PWM_W_HW, PWM_W_NUM, pwm_w_cc1);
 
     uint32_t adc_isr0_cc_samp0, adc_isr0_cc_samp1;
     if(motor[0].params_ptr->sys.analog.shunt.type == Single_Shunt)
@@ -527,6 +547,11 @@ void MCU_RunISR1(void)
 
 #if defined (N_FAULT_HW_PORT)
     motor[0].sensor_iface_ptr->digital.fault = !Cy_GPIO_Read(N_FAULT_HW_PORT, N_FAULT_HW_NUM);
+    // Detect kill via TCPWM: counter not running indicates kill event
+    if (!(Cy_TCPWM_PWM_GetStatus(PWM_U_HW, PWM_U_NUM) & CY_TCPWM_PWM_STATUS_COUNTER_RUNNING))
+    {
+        motor[0].sensor_iface_ptr->digital.fault = true;
+    }
     motor[0].faults_ptr->flags.hw.cs_ocp = motor[0].sensor_iface_ptr->digital.fault ? 0b111 : 0b000; // hw faults only cover over-current without SGD
 #endif
 
@@ -564,7 +589,9 @@ void MCU_RunISR1(void)
 #elif defined(FAULT_LED_ALL_PORT) // one led for all faults
     Cy_GPIO_Write(FAULT_LED_ALL_PORT, FAULT_LED_ALL_NUM, (bool)(motor[0].faults_ptr->flags_latched.all));
 #endif
-   
+#if (DRIVE_ENABLE_CONTROL_POT)
+    DriveEnableControlforPot(&motor[0]);  // Update drive enable/disable based on potentiometer command (Motor 0)
+#endif
 #if defined (EXE_TIMER_ENABLED)
     MCU_StopTimeCap(&mcu[0].isr1_exe);
     //Process the execution time calculation
@@ -575,6 +602,9 @@ void MCU_RunISR1(void)
     // Watchdog kick
 #if defined(CY_USING_HAL)
     cyhal_wdt_kick(&mcu[0].wdt_obj);
+#endif
+#if (CPU_LOAD_CALC_ENABLED)
+    StopWatchRun(&mcu[0].cpu_calc.timer);  /* Advance CPU load measurement timer (tick every ts1) */
 #endif
 }
 
@@ -609,7 +639,12 @@ void MCU_Init(uint8_t motor_id)
     MCU_InitPosInterface();
     MCU_InitWatchdog();
 #if MOTOR_CTRL_NO_OF_SCOPE_CHANNELS > 0 /*if scope is enabled*/
-    ProbeScope_Init((uint32_t)motor[motor_id].params_ptr->sys.samp.fs0);
+    static bool probe_scope_initialized = false;
+    if (!probe_scope_initialized)
+    {
+        ProbeScope_Init((uint32_t)motor[0].params_ptr->sys.samp.fs0);
+        probe_scope_initialized = true;
+    }
 #endif
     motor[motor_id].sensor_iface_ptr->digital.dir = true; // initial direction is positive
 }
@@ -629,29 +664,86 @@ void MCU_ExitCriticalSection(void)
 RAMFUNC_END
 
 RAMFUNC_BEGIN
+static void MCU_RestartKilledPWMs(void)
+{
+    // Restart PWM counters if stopped by kill (counter not running)
+    if (!(Cy_TCPWM_PWM_GetStatus(PWM_U_HW, PWM_U_NUM) & CY_TCPWM_PWM_STATUS_COUNTER_RUNNING))
+    {
+        Cy_TCPWM_PWM_Disable(PWM_U_HW, PWM_U_NUM);
+        Cy_TCPWM_PWM_Disable(PWM_V_HW, PWM_V_NUM);
+        Cy_TCPWM_PWM_Disable(PWM_W_HW, PWM_W_NUM);
+        Cy_TCPWM_PWM_Enable(PWM_U_HW, PWM_U_NUM);
+        Cy_TCPWM_PWM_Enable(PWM_V_HW, PWM_V_NUM);
+        Cy_TCPWM_PWM_Enable(PWM_W_HW, PWM_W_NUM);
+        // Re-enable reload trigger so next SYNC_ISR1 overflow starts all PWMs in sync
+        mcu[0].isr1.count = 0U;
+        MCU_EnableTimerReload();
+    }
+}
+RAMFUNC_END
+
+RAMFUNC_BEGIN
 void MCU_GateDriverEnterHighZ(uint8_t motor_id)
 {
+    uint8_t phase_control = (motor_id>>5)&0x7;  //Special handling to control  driver per phase, Bit 7 - Phase W, Bit 6 - Phase V, Bit 5 - Phase U
+    uint8_t motor_inst    =  motor_id &0x1F;
+
+    MCU_RestartKilledPWMs();
+
+    if ((phase_control == 0) ||(phase_control == 0x7) ) //Control all the 3 phases 
+    {
+        if(motor_inst == MOTOR_CTRL_ID_MOTOR0)  /*Motor 0*/
+        {
 #if defined(ANALOG_ROUTING_MUX_RUNTIME)
-    mcu[motor_id].adc_mux.en = true;
+            mcu[motor_id].adc_mux.en = true;
 #endif
- 
-    MCU_PhaseUEnterHighZ();
-    MCU_PhaseVEnterHighZ();
-    MCU_PhaseWEnterHighZ();
+            MCU_PhaseUEnterHighZ();
+            MCU_PhaseVEnterHighZ();
+            MCU_PhaseWEnterHighZ();
+        }
+    }
+    else 
+    {
+        if(motor_inst == MOTOR_CTRL_ID_MOTOR0)  /*Motor 0*/
+        {
+            if(phase_control&0x1){MCU_PhaseUEnterHighZ(); }  //Phase U control enabled
+            if(phase_control&0x2){MCU_PhaseVEnterHighZ(); }  //Phase V control enabled
+            if(phase_control&0x4){MCU_PhaseWEnterHighZ(); }  //Phase W control enabled
+        }           
+    }
 }
 RAMFUNC_END
 
 RAMFUNC_BEGIN
 void MCU_GateDriverExitHighZ(uint8_t motor_id)
 {
+    uint8_t phase_control = (motor_id>>5)&0x7;  //Special handling to control gate driver per phase separately, Bit 7 - Phase W, Bit 6 - Phase V, Bit 5 - Phase U
+    uint8_t motor_inst    =  motor_id &0x1F;
+
+    MCU_RestartKilledPWMs();
+
+    if ((phase_control == 0) ||(phase_control == 0x7) ) //Control all the 3 phases 
+    {
+        if(motor_inst == MOTOR_CTRL_ID_MOTOR0)  /*Motor 0*/
+        {
 #if defined(ANALOG_ROUTING_MUX_RUNTIME)
-    mcu[motor_id].adc_mux.en = false;
-    MCU_RoutingConfigMUX0Wrap();
+            mcu[motor_id].adc_mux.en = false;
+            MCU_RoutingConfigMUX0Wrap();
 #endif
-    
-    MCU_PhaseUExitHighZ();
-    MCU_PhaseVExitHighZ();
-    MCU_PhaseWExitHighZ();
+            MCU_PhaseUExitHighZ();
+            MCU_PhaseVExitHighZ();
+            MCU_PhaseWExitHighZ();
+        }
+    }
+    else 
+    {
+        if(motor_inst == MOTOR_CTRL_ID_MOTOR0)  /*Motor 0*/
+        {
+            if(phase_control&0x1){MCU_PhaseUExitHighZ(); }  //Phase U control enabled
+            if(phase_control&0x2){MCU_PhaseVExitHighZ(); }  //Phase V control enabled
+            if(phase_control&0x4){MCU_PhaseWExitHighZ(); }  //Phase W control enabled
+        }            
+    }    
 }
 RAMFUNC_END
 
@@ -819,6 +911,52 @@ bool MCU_ArePhaseVoltagesMeasured(uint8_t motor_id)
 RAMFUNC_END
 
 #if defined (EXE_TIMER_ENABLED)
+/**
+ * @brief  Initializes the CPU load calculation module.
+ *
+ * Sets up the StopWatch timer used to periodically trigger CPU load
+ * measurements. Must be called after STATE_MACHINE_Init() since it
+ * requires motor[0].params_ptr->sys.samp.ts1 to be valid.
+ * The timer is incremented each ISR1 tick via StopWatchRun() in MCU_RunISR1().
+ */
+ 
+ /**
+ * @brief  Calculates and updates the CPU load periodically.
+ *
+ * Called from the main loop. Each time the StopWatch timer expires
+ * (every CPU_LOAD_CALC_EXERATE seconds), a 100ms idle measurement is
+ * performed using Cy_SysLib_Delay(). ISRs preempt this busy-wait loop,
+ * causing it to take longer than the pure idle time. The extra elapsed
+ * time relative to the idle baseline (CPU_LOAD_CALC_IDLE_TASKTIME +
+ * CPU_LOAD_CALC_IDLE_TASKOVERHEAD) represents ISR execution time.
+ *
+ * cpu_load = (end_time - idle_baseline) / end_time
+ *
+ * Results are stored in mcu[0].cpu_calc.cpu_load [0.0 = 0%, 1.0 = 100%].
+ * If end_time exceeds CPU_LOAD_CALC_TIMEOUT, cpu_load is set to 1.0 (100%).
+ */
+void MCU_CPULoadCalc(void)
+{
+  TIMER_t *timer_ptr = &mcu[0].cpu_calc.timer;
+
+    StopWatchInit(timer_ptr, CPU_LOAD_CALC_TIMEOUT, motor[0].params_ptr->sys.samp.ts1); 
+    StopWatchReset(timer_ptr);
+
+    Cy_SysLib_Delay((uint32_t)(CPU_LOAD_CALC_IDLE_TASKTIME * 1000U));
+    float end_time = StopWatchGetTime(timer_ptr);
+
+    if(StopWatchIsDone(timer_ptr))
+    {   mcu[0].cpu_calc.cpu_load = 1.0f; } 
+    else if(end_time <= 0.0f)
+    {   mcu[0].cpu_calc.cpu_load = 0.0f; } /* guard: no ticks counted yet */
+    else
+    {
+        mcu[0].cpu_calc.cpu_load = (end_time - (CPU_LOAD_CALC_IDLE_TASKTIME + CPU_LOAD_CALC_IDLE_TASKOVERHEAD)) / end_time;
+        /* Clamp to [0.0, 1.0] - tick resolution can cause small negative values */
+        if(mcu[0].cpu_calc.cpu_load < 0.0f) { mcu[0].cpu_calc.cpu_load = 0.0f; }
+        if(mcu[0].cpu_calc.cpu_load > 1.0f) { mcu[0].cpu_calc.cpu_load = 1.0f; }
+    }
+}
 RAMFUNC_BEGIN
 void MCU_StartTimeCap(MCU_TIME_CAP_t* time_cap)
 {

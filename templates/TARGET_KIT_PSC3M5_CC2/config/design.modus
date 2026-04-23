@@ -1052,7 +1052,7 @@
                     </Block>
                     <Parameters>
                         <Param id="fracDivider" value="0"/>
-                        <Param id="intDivider" value="4"/>
+                        <Param id="intDivider" value="240"/>
                         <Param id="startOnReset" value="true"/>
                     </Parameters>
                 </Personality>
@@ -1248,7 +1248,7 @@
                     <Block location="srss[0].eeprom[0]" locked="true"/>
                     <Parameters>
                         <Param id="blockingMode" value="true"/>
-                        <Param id="eeprom_size" value="4096"/>
+                        <Param id="eeprom_size" value="4608"/>
                         <Param id="redundantCopy" value="false"/>
                         <Param id="simpleMode" value="true"/>
                         <Param id="wearLevelingFactor" value="1"/>
