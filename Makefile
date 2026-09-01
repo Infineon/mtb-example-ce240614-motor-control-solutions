@@ -151,6 +151,11 @@ VFP_SELECT=hardfp
 ifeq ($(TOOLCHAIN),GCC_ARM)
 CFLAGS=-Ofast
 CFLAGS+=-Wno-maybe-uninitialized    # This is getting rid of compiler warning when compiling PDL source file cyhal_spi.c
+CFLAGS+=-Wno-array-bounds           # PDL cy_sar2.c indexes PASS_SAR_Type.CH[] with a runtime channel that GCC cannot bound
+
+# Suppress cosmetic RWX LOAD segment warning from newer binutils; BSP linker
+# scripts combine code/data in one PT_LOAD without per-section PHDRS.
+LDFLAGS+=-Wl,--no-warn-rwx-segments
 endif
 
 # Additional / custom C++ compiler flags.

@@ -112,6 +112,7 @@ static inline bool DriveEnableControl(bool  current_state, float cmd, float enab
  *******************************************************************************/
 void DriveEnableControlforPot(MOTOR_t *motor_ptr)
 {
+#if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_SFO)
     PARAMS_t*    params_ptr = motor_ptr->params_ptr;    // Control parameters (thresholds, hysteresis, mode)
     CTRL_VARS_t* vars_ptr   = motor_ptr->vars_ptr;      // Runtime variables (command, enable flag)
 
@@ -191,4 +192,5 @@ void DriveEnableControlforPot(MOTOR_t *motor_ptr)
 #endif
         }
     }
+#endif
 }

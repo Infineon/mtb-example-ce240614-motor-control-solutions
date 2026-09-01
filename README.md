@@ -1,30 +1,29 @@
 # Motor control demo
 
-This code example demonstrates the sensorless and sensored solutions using the Infineon's MCUs. Code example includes the following solutions.
+This code example demonstrates the sensorless and sensored solutions using Infineon MCUs. Code example includes the following solutions.
 - Sensorless PMSM FOC with 3-shunt
 - Sensorless PMSM FOC with 1-shunt
 - Hall sensor-based PMSM FOC
-- Encoder-based PMSM FOC (Supported for PSOC Control C3 MCU)
+- Encoder-based PMSM FOC (supported for PSOC Control C3 MCU)
 - Hall sensor-based Trapezoidal Block Commutation (TBC)
 
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ce240614-motor-control-solutions)
 
-[Provide feedback on this code example.](https://yourvoice.infineon.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDA2MTQiLCJTcGVjIE51bWJlciI6IjAwMi00MDYxNCIsIkRvYyBUaXRsZSI6Ik1vdG9yIGNvbnRyb2wgZGVtbyIsInJpZCI6ImFiaGlzaGVrLnByYXNoYW50QGluZmluZW9uLmNvbSIsIkRvYyB2ZXJzaW9uIjoiMi4xLjAiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
+[Provide feedback on this code example.](https://yourvoice.infineon.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDA2MTQiLCJTcGVjIE51bWJlciI6IjAwMi00MDYxNCIsIkRvYyBUaXRsZSI6Ik1vdG9yIGNvbnRyb2wgZGVtbyIsInJpZCI6ImFiaGlzaGVrLnByYXNoYW50QGluZmluZW9uLmNvbSIsIkRvYyB2ZXJzaW9uIjoiMi4yLjAiLCJEb2MgTGFuZ3VhZ2UiOiJFbmdsaXNoIiwiRG9jIERpdmlzaW9uIjoiTUNEIiwiRG9jIEJVIjoiSUNXIiwiRG9jIEZhbWlseSI6IlBTT0MifQ==)
 
 
 ## Requirements
 
-- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.7 or later
--  ModusToolbox&trade; Motor Suite GUI : 2.9.0 or later
+- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.8 or later
+- ModusToolbox&trade; Motor Suite GUI: 2.10.0 or later
 - Board support package (BSP) minimum required version:
-  - KIT_XMC7200_DC_V1: 2.2.0 
+  - KIT_XMC7200_DC_V1: 2.2.0
   - KIT_PSC3M5_CC2: 1.0.3
   - KIT_PSC3M5_2GO: 2.0.1
   - KIT_TRAVEO_T2G_B_H_MC1: 1.0.0
 - Programming language: C
-- Associated parts: [XMC7200D-F176K8384](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/xmc7200d-f176k8384aa/) [All PSOC&trade; Control C3 MCUs](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/32-bit-psoc-control-arm-cortex-m33-mcu/) 
-[TRAVEO&trade; T2G CYT4BF Series](https://www.infineon.com/cms/en/product/microcontroller/32-bit-traveo-t2g-arm-cortex-microcontroller/32-bit-traveo-t2g-arm-cortex-for-body/traveo-t2g-cyt4bf-series/)
+- Associated parts: [XMC7200D-F176K8384](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/xmc7200d-f176k8384aa/) [All PSOC&trade; Control C3 MCUs](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/32-bit-psoc-control-arm-cortex-m33-mcu/) [TRAVEO&trade; T2G CYT4BF Series](https://www.infineon.com/cms/en/product/microcontroller/32-bit-traveo-t2g-arm-cortex-microcontroller/32-bit-traveo-t2g-arm-cortex-for-body/traveo-t2g-cyt4bf-series/)
 
 ## Supported toolchains (make variable 'TOOLCHAIN')
 
@@ -34,19 +33,19 @@ This code example demonstrates the sensorless and sensored solutions using the I
 
 ## Supported kits (make variable 'TARGET')
 
-- [KIT_XMC7200_DC_V1 Motor Control Card](https://www.infineon.com/KIT_XMC7200_DC_V1) (`KIT_XMC7200_DC_V1`) – Default value of `TARGET`
-- [KIT_PSC3M5_CC2 Motor Control Card](https://www.infineon.com/KIT_PSC3M5_CC2) (`KIT_PSC3M5_CC2`)
-- [KIT_PSC3M5_2GO Compact Motor Control Kit](https://www.infineon.com/KIT_PSC3M5_2GO) (`KIT_PSC3M5_2GO`)
+- [KIT_XMC7200_DC_V1 Motor Control Card](https://www.infineon.com/evaluation-board/KIT-XMC7200-DC-V1) (`KIT_XMC7200_DC_V1`) – Default value of `TARGET`
+- [KIT_PSC3M5_CC2 Motor Control Card](https://www.infineon.com/evaluation-board/KIT-PSC3M5-CC2) (`KIT_PSC3M5_CC2`)
+- [KIT_PSC3M5_2GO Compact Motor Control Kit](https://www.infineon.com/evaluation-board/KIT-PSC3M5-2GO) (`KIT_PSC3M5_2GO`)
 - [KIT-TRAVEO-T2G-B-H-MC1 Motor Control Kit](https://www.infineon.com/evaluation-board/KIT-TRAVEO-T2G-B-H-MC1) (`KIT-TRAVEO-T2G-B-H-MC1`)
 
 ## Hardware setup
 
-Refer to the respective kit quick start guide for the hardware setup information
+Refer to the respective kit quick start guide for the hardware setup information.
 
--  [KIT_XMC7200_MC1 XMC7200 Complete System Motor Control Kit](https://www.infineon.com/KIT_XMC7200_MC1) (`KIT_XMC7200_MC1`)<br>
-   > **Note:**To enable single-shunt FOC on the KIT_XMC7200_MC1 with the new adaptor card, connect pins P8.3 and P10.5 with a jumper wire.
--  [KIT_PSC3M5_MC1 PSOC&trade; Control C3M5 Complete System Motor Control Kit](https://www.infineon.com/KIT_PSC3M5_MC1) (`KIT_PSC3M5_MC1`)
--  [KIT_PSC3M5_2GO Compact Motor Control Kit](https://www.infineon.com/KIT_PSC3M5_2GO) (`KIT_PSC3M5_2GO`)
+- [KIT_XMC7200_MC1 XMC7200 Complete System Motor Control Kit](https://www.infineon.com/evaluation-board/KIT-XMC7200-MC1) (`KIT_XMC7200_MC1`)<br>
+  > **Note:** To enable single-shunt FOC on the KIT_XMC7200_MC1 with the new adaptor card, connect pins P8.3 and P10.5 with a jumper wire.
+- [KIT_PSC3M5_MC1 PSOC&trade; Control C3M5 Complete System Motor Control Kit](https://www.infineon.com/evaluation-board/KIT-PSC3M5-MC1) (`KIT_PSC3M5_MC1`)
+- [KIT_PSC3M5_2GO Compact Motor Control Kit](https://www.infineon.com/evaluation-board/KIT-PSC3M5-2GO) (`KIT_PSC3M5_2GO`)
 - [KIT-TRAVEO-T2G-B-H-MC1 TRAVEO&trade; T2G CYT4BF Complete System Motor Control Kit](https://www.infineon.com/evaluation-board/KIT-TRAVEO-T2G-B-H-MC1) (`KIT-TRAVEO-T2G-B-H-MC1`)
 
 ## Software setup
@@ -142,11 +141,11 @@ For more details, see the [Visual Studio Code for ModusToolbox&trade; user guide
 </details>
 
 
-<details><summary><b>Keil µVision</b></summary>
+<details><summary><b>Arm&reg; Keil&reg; µVision&reg;</b></summary>
 
-Double-click the generated *{project-name}.cprj* file to launch the Keil µVision IDE.
+Double-click the generated *{project-name}.cprj* file to launch the Keil&reg; µVision&reg; IDE.
 
-For more details, see the [Keil µVision for ModusToolbox&trade; user guide](https://www.infineon.com/MTBuVisionUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mt_uvision_user_guide.pdf*).
+For more details, see the [Arm&reg; Keil&reg; µVision&reg; for ModusToolbox&trade; user guide](https://www.infineon.com/MTBuVisionUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mt_uvision_user_guide.pdf*).
 
 </details>
 
@@ -353,6 +352,7 @@ Document title: *CE240614* – *Motor control demo*
  1.0.3   | Added support to TRAVEO&trade; T2G CYT4BF MCU
  2.0.0   | Updated as per motor control library 3.1.0
  2.1.0   | Updated as per motor control library 3.2.0
+ 2.2.0   | Supported features of motor library 3.3.0 and mtb-oscilloscope
 <br>
 
 

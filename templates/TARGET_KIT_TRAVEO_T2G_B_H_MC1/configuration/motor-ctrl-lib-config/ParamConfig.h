@@ -79,13 +79,16 @@
 /*Note:Shunt resistance and current amplifier gain value configuration at Power Board configuration*/
 #define MOTOR_CTRL_SS_HMOD_KI                      (0.5f) 
 #define MOTOR_CTRL_SS_PS_SH_DELAY                  (0.0E-6f)                   /* [sec], Switch delay configuration for ADC measurement for Phase shift modulation*/
+#define MOTOR_CTRL_SS_MEAS_TYPE                   (Phase_Shift)                 /*   Hyb_Mod =  0U, Hybrid modulation; Phase_Shift = 1U Phase Shift modulation; Low_Noise_Phase_shift_PWM = 2U*/ 
 
+#define MOTOR_CTRL_LS_SAMPLE_DELAY                 (0.0f)                      /* [sec], Sample delay configuration for ADC measurement for leg shunt*/
 
-#define MOTOR_CTRL_SS_MEAS_TYPE                   (Phase_Shift)                /*   Hyb_Mod =  0U, Hybrid modulation; Phase_Shift = 1U Phase Shift modulation*/  
-
+#define MOTOR_CTRL_LOWNOISE_TO_PHASESHIFT_THRES   (0.5f)                       /* [%],  Low noise PWM to regular phase shift transfer threshold, in mi */   
+#define MOTOR_CTRL_PHASESHIFT_TO_LOWNOISE_THRES   (0.35f)                      /* [%],  Regular phase shift  to Low noise PWM transfer threshold, in mi */
 /*********Rate Limiters*********/
 #define MOTOR_CTRL_SPEED_CMD_RATE                  (1000.0f)                    /*[RPM/sec], Speed command rate*/
 #define MOTOR_CTRL_SPEED_CMD_RATE_OPEN_LOOP        (1000.0f)                    /*[RPM/sec], Speed command rate during open loop state (Voltage OL and current OL)*/
+#define MOTOR_CTRL_SPEED_CMD_RATE_HFI              (250.0f)   //(500)                 /*[RPM/sec], Speed command rate while HFI is active (high_freq.used==true). Keep <= normal rate so the HFI PLL can track without saturating; too fast destabilises HFI.*/
 #if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC)
 #define MOTOR_CTRL_CURRENT_CMD_RATE                (10.0f*MOTOR_CURRENT_PEAK)   /*[A/sec], Current command rate*/
 #elif defined(CTRL_METHOD_SFO)
@@ -94,18 +97,30 @@
 
 #if defined(CTRL_METHOD_RFO)
 #define MOTOR_CTRL_POSITION_CMD_RATE               (180.0f)                     /*[Deg/sec], Position command rate*/
+#define MOTOR_CTRL_VQ_CMD_RATE                     (50.0f)                      /*[Vpk/sec], Vq voltage command slew rate (Vq_Mode only)*/
 #endif
 /*********Faults*********/
 #define MOTOR_CTRL_OVER_CURRENT_THRESH             (120.0f)                     /*[%], over current fault threshold, percentage of motor continuous current*/
 #define MOTOR_CTRL_VDC_DEBOUNCE_TIME               (0.3f)                       /*[sec], VDC fault detection debouncing time*/
 #define MOTOR_CTRL_OVER_TEMP_THRESH                (90.0f)                      /*[Celsius], over temperature fault threshold*/
 
-#define MOTOR_CTLR_FAULT_PHASE_LOSS_TIME            (1.0f)                      /*[sec],phase loss time detection constant*/
-#define MOTOR_CTLR_FAULT_PHASE_LOSS_MIN_CURRENT     (0.001f)                    /*[A],phase loss detection minimum current threshold*/
+#define MOTOR_CTRL_FAULT_PHASE_LOSS_TIME            (1.0f)                      /*[sec],phase loss time detection constant*/
+#define MOTOR_CTRL_FAULT_PHASE_LOSS_MIN_CURRENT     (0.001f)                    /*[A],phase loss detection minimum current threshold*/
+
+#define MOTOR_CTRL_FLUX_MAX_THRESH                  (MOTOR_I_AM * 1.5f)         /*[Wb], rotor flux over-fault threshold (150% of rated PM flux)*/
+#define MOTOR_CTRL_FLUX_MIN_THRESH                  (MOTOR_I_AM * 0.3f)         /*[Wb], rotor flux under-fault threshold (30% of rated PM flux)*/
+#define MOTOR_CTRL_FLUX_FAULT_TIME                 (1.0f)                      /*[sec], rotor flux fault debounce time*/
+
+#define MOTOR_CTRL_STALL_COEFFICIENT               (0.5f)                                /*[#], stall detection voltage margin coefficient, trip when R*|I|+L*d|I|/dt reaches this fraction of applied voltage*/
+#define MOTOR_CTRL_STALL_FILT_TAU                  (0.001f)                              /*[sec], stall detection filter time constant for voltage/current*/
+#define MOTOR_CTRL_STALL_CURRENT                   (10.0f)                               /*[A], stall detection minimum current threshold*/
+#define MOTOR_CTRL_STALL_FAULT_TIME                (0.004f)                              /*[sec], stall detection debounce time*/
 
 #define MOTOR_CTRL_FAULT_SHORT_METHOD              (Alternate_Short)            /*During fault switch status, Low_Side_Short = 0U, High_Side_Short = 1U, Alternate_Short = 2U*/
 #define MOTOR_CTRL_MAX_FAULT_CLR_TRIES             (10U)                        /*[], maximum nuumber of fault clear tries*/
 #define MOTOR_CTRL_FAULT_CLR_TRY_PERIOD            (10.0f)                      /*[sec], Fault clear retry period*/  
+#define MOTOR_OFFSET_CURR_MIN                      (2.25f)                     /*[V], minimum voltage offset (VDDA/2 -10%, VDDA = 5V)*/
+#define MOTOR_OFFSET_CURR_MAX                      (2.75f)                     /*[V], maximum voltage offset (VDDA/2 +10%, VDDA = 5V)*/
 /*********Command*********/
 #define MOTOR_CTRL_COMMAND_SOURCE                  (Internal)                   /*Internal= 0(From potentiometer), External =1(From GUI, UART, etc.)*/
 
@@ -136,6 +151,7 @@
 /*******************************************************************************/
 /*******Filter*******/
 #define MOTOR_CTRL_TORQUE_FILT_BW                  (1.0f)                      /*[Hz], Estimated torque filter bandwidth*/
+#define MOTOR_CTRL_POWER_FILT_BW                    (1.0f)                      /*[Hz], Estimated electrical power filter bandwidth*/
 
 /*********SPEED Anti_Resonant Filter*********/
 #define MOTOR_CTRL_SPEED_AR_FILTER                 (En)                        /*Dis =0, En=1, Enable/disable speed anti-resosant filter*/
@@ -204,6 +220,9 @@
 #define MOTOR_CTRL_FIVE_SEG_MOD                    (Dis)                       /*Dis =0, En=1, Enable/disable five segment modulation*/
 #define MOTOR_CTRL_FIVE_SEG_MOD_ACT_THRESH         (10.0f)                     /*[%], Five segment modulation activation threshold*/
 #define MOTOR_CTRL_FIVE_SEG_MOD_INACT_THRESH       (5.0f)                      /*[%], Five segment modulation deactivation threshold*/
+#define MOTOR_CTRL_FIVE_SEG_MOD_SELECTION          (Five_Seg_MI_Based)         /*[0-1], Five_Seg_MI_Based = 0, Five_Seg_Speed_Based =1,Five segment modulation selection*/
+#define MOTOR_CTRL_FIVE_SEG_ACT_SPEED_RPM          (MOTOR_MAX_SPEED * 0.25f)   /*[RPM] activate DPWM above this speed*/
+#define MOTOR_CTRL_FIVE_SEG_INACT_SPEED_RPM        (MOTOR_MAX_SPEED * 0.20f)   /*[RPM] deactivate DPWM below this speed*/
 
 #if defined(CTRL_METHOD_TBC)
 /***********Trapezoidal Commutation***********/
@@ -220,6 +239,7 @@
 #define MOTOR_CTRL_FLUX_WEAKEN_VOLT_MARGIN         (0.8f)                      /*[Hz], Flux weakening voltage margin*/
 #if defined(CTRL_METHOD_RFO)
 #define MOTOR_CTRL_FLUX_WEAKEN_BW                  (3.0f)                      /*[Hz], Flux weakening loop bandwidth*/
+#define MOTOR_CTRL_FLUX_WEAKEN_VQ                  (Dis)                       /*Dis=0, Vq_Mode FW override -- keep Dis*/
 #endif
 /*********Rotor Pre-Alignment*********/
 #define MOTOR_CTRL_ALIGN_TIME                      (1.0f)                      /*[sec], Alignment time*/
@@ -286,4 +306,5 @@
 #define MECH_VISCOUS                              (1.2E-5f)                    /*[kg.m^2/sec], Viscous Damping*/
 #define MECH_FRICTION                             (6.0E-3f)                    /*[kg.m^2/sec^2], Frittion*/
 
+/*******************************************************************************/
 

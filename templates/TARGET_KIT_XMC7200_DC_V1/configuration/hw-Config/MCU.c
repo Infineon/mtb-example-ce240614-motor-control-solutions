@@ -33,10 +33,22 @@
 
 #include "HardwareIface.h"
 #include "MCU.h"
+#include "mtb_oscilloscope.h"
+#include "mtb_oscilloscope_cfg.h"
 #include "ParamConfig.h"
-#if (MOTOR_CTRL_NO_OF_SCOPE_CHANNELS > 0) /* if scope is enabled */
-#include "probe_scope.h"
-#endif
+#include "PgOut.h"
+
+// ADC Configuration Constants
+#define ADC_RESOLUTION_BITS       (12U)                          // SAR2 ADC resolution
+#define ADC_MAX_VALUE             (1U << ADC_RESOLUTION_BITS)    // 4096 ticks
+#define ADC_VOLTAGE_PER_TICK_V    ((CY_CFG_PWR_VDDA_MV * 1.0E-3f) / (float)ADC_MAX_VALUE)
+#define CURR_ADC_HALF_POINT_TICKS (0x1<<11)
+
+// Current sensing offset detection
+#define CURR_OFF_FAULT_PHASE_U    (0x01U)
+#define CURR_OFF_FAULT_PHASE_V    (0x02U)
+#define CURR_OFF_FAULT_PHASE_W    (0x04U)
+
 /******************************************************************************/
 MCU_t mcu[MOTOR_CTRL_NO_OF_MOTOR];
 extern uint8_t Em_Eeprom_Storage[srss_0_eeprom_0_PHYSICAL_SIZE];
@@ -75,6 +87,8 @@ static void MCU_InitDMAs(void);
 static void MCU_InitPosInterface(void);
 static void MCU_InitWatchdog(void);
 static void MCU_InitInterrupts(void);
+
+static void MCU_ComputeOffsetVoltage(uint8_t motor_id);
 /******************************************************************************/
 static void MCU_InitChipInfo(void)
 {
@@ -391,8 +405,78 @@ static void MCU_InitInterrupts(void)
     mcu[0].interrupt.nvic_dma_adc_1 = Cy_SysInt_GetNvicConnection(DMA_ADC_1_IRQ);
     mcu[0].interrupt.nvic_dma_adc_2 = Cy_SysInt_GetNvicConnection(DMA_ADC_2_IRQ);
     mcu[0].interrupt.nvic_sync_isr1 = Cy_SysInt_GetNvicConnection(SYNC_ISR1_IRQ);
-    
+
 }
+
+RAMFUNC_BEGIN
+/**
+ * @brief Validates current sensor offset voltages and sets fault flags if out of range
+ *
+ * This function computes the actual voltage at the ADC input for each phase's current
+ * sensor offset and compares it against configured min/max limits. The number of phases
+ * checked depends on the shunt configuration (Single, Two, or Three shunt).
+ *
+ * The voltage calculation converts the stored current offset back to ADC ticks, applies
+ * current sense polarity, and scales to actual voltage using ADC reference parameters.
+ *
+ * @param[in] motor_id Motor instance identifier (0 to MOTOR_CTRL_NO_OF_MOTOR-1)
+ *
+ * @note This function is placed in RAM for fast execution (RAMFUNC)
+ * @note Phase checking logic:
+ *       - Phase U: Always checked (all shunt types)
+ *       - Phase V: Checked for Three_Shunt and Two_Shunt only
+ *       - Phase W: Checked for Three_Shunt only
+ *
+ * @warning If ADC scale factor is invalid (near zero), all phases are flagged as faulty
+ *
+ * @post Updates motor[motor_id].vars_ptr->curr_off_fault with fault bits:
+ *       - Bit 0 (0x01): Phase U fault
+ *       - Bit 1 (0x02): Phase V fault
+ *       - Bit 2 (0x04): Phase W fault
+ *       - All bits (0x07): Invalid ADC scale
+ */
+static void MCU_ComputeOffsetVoltage(uint8_t motor_id)
+{
+    float min_limit = motor[motor_id].params_ptr->sys.faults.offset_curr_min_limit;
+    float max_limit = motor[motor_id].params_ptr->sys.faults.offset_curr_max_limit;
+
+    SHUNT_TYPE_t shunt = motor[motor_id].params_ptr->sys.analog.shunt.type;
+
+    // Initialize: no fault
+    motor[motor_id].vars_ptr->curr_off_fault = 0;
+
+    // Validate the measured ADC voltage directly. The learned current correction
+    // is a control value and must not be used to reconstruct the ADC pin voltage.
+    float v_u = (float)(uint16_t)mcu[motor_id].dma_results[ADC_ISAMPA] * ADC_VOLTAGE_PER_TICK_V;
+
+    if ((v_u < min_limit) || (v_u > max_limit))
+    {
+        motor[motor_id].vars_ptr->curr_off_fault |= CURR_OFF_FAULT_PHASE_U;  // Bit 0: Phase U fault
+    }
+
+    // Phase V - Three_Shunt and Two_Shunt
+    if (shunt == Three_Shunt || shunt == Two_Shunt)
+    {
+        float v_v = (float)(uint16_t)mcu[motor_id].dma_results[ADC_ISAMPB] * ADC_VOLTAGE_PER_TICK_V;
+
+        if ((v_v < min_limit) || (v_v > max_limit))
+        {
+            motor[motor_id].vars_ptr->curr_off_fault |= CURR_OFF_FAULT_PHASE_V;  // Bit 1: Phase V fault
+        }
+    }
+
+    // Phase W - Three_Shunt only
+    if (shunt == Three_Shunt)
+    {
+        float v_w = (float)(uint16_t)mcu[motor_id].dma_results[ADC_ISAMPC] * ADC_VOLTAGE_PER_TICK_V;
+
+        if ((v_w < min_limit) || (v_w > max_limit))
+        {
+            motor[motor_id].vars_ptr->curr_off_fault |= CURR_OFF_FAULT_PHASE_W;  // Bit 2: Phase W fault
+        }
+    }
+}
+RAMFUNC_END
 
 /******************************************************************************/
 RAMFUNC_BEGIN
@@ -453,10 +537,9 @@ void MCU_RunISR0(void)
 #endif  /*End of #if defined (HALL_0_PORT && HALL_1_PORT && HALL_2_PORT)*/
 #endif  /*#if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC)*/
 
-    const int32_t Curr_ADC_Half_Point_Ticks = (0x1<<11);
-    motor[0].sensor_iface_ptr->i_samp_0.raw = mcu[0].adc_scale.i_uvw * (Curr_ADC_Half_Point_Ticks - (uint16_t)mcu[0].dma_results[mcu[0].adc_mux.idx_isamp[0]])*motor[0].params_ptr->sys.analog.shunt.current_sense_polarity;
-    motor[0].sensor_iface_ptr->i_samp_1.raw = mcu[0].adc_scale.i_uvw * (Curr_ADC_Half_Point_Ticks - (uint16_t)mcu[0].dma_results[mcu[0].adc_mux.idx_isamp[1]])*motor[0].params_ptr->sys.analog.shunt.current_sense_polarity;
-    motor[0].sensor_iface_ptr->i_samp_2.raw = mcu[0].adc_scale.i_uvw * (Curr_ADC_Half_Point_Ticks - (uint16_t)mcu[0].dma_results[mcu[0].adc_mux.idx_isamp[2]])*motor[0].params_ptr->sys.analog.shunt.current_sense_polarity;
+    motor[0].sensor_iface_ptr->i_samp_0.raw = mcu[0].adc_scale.i_uvw * (CURR_ADC_HALF_POINT_TICKS - (uint16_t)mcu[0].dma_results[mcu[0].adc_mux.idx_isamp[0]])*motor[0].params_ptr->sys.analog.shunt.current_sense_polarity;
+    motor[0].sensor_iface_ptr->i_samp_1.raw = mcu[0].adc_scale.i_uvw * (CURR_ADC_HALF_POINT_TICKS - (uint16_t)mcu[0].dma_results[mcu[0].adc_mux.idx_isamp[1]])*motor[0].params_ptr->sys.analog.shunt.current_sense_polarity;
+    motor[0].sensor_iface_ptr->i_samp_2.raw = mcu[0].adc_scale.i_uvw * (CURR_ADC_HALF_POINT_TICKS - (uint16_t)mcu[0].dma_results[mcu[0].adc_mux.idx_isamp[2]])*motor[0].params_ptr->sys.analog.shunt.current_sense_polarity;
 #if defined(ANALOG_ROUTING_MUX_RUNTIME)
     if(mcu[0].adc_mux.en)
     {
@@ -503,19 +586,30 @@ void MCU_RunISR0(void)
 
     STATE_MACHINE_RunISR0(&motor[0]);
 
+#if defined(PG_OUT_ENABLED)
+    PgOut_Run();
+#endif
+
+    uint32_t pwm_u_cc0,pwm_u_cc1,pwm_v_cc0,pwm_v_cc1,pwm_w_cc0,pwm_w_cc1;
+    
     UVW_t d_uvw_cmd_adj = PWM_INVERSION ? (UVW_t){.w=(1.0f - motor[0].vars_ptr->d_uvw_cmd.w), .v=(1.0f - motor[0].vars_ptr->d_uvw_cmd.v), .u=(1.0f - motor[0].vars_ptr->d_uvw_cmd.u)} :
                                           (UVW_t){.w=motor[0].vars_ptr->d_uvw_cmd.w, .v=motor[0].vars_ptr->d_uvw_cmd.v, .u=motor[0].vars_ptr->d_uvw_cmd.u};
-    uint32_t pwm_u_cc0 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.u);
-    uint32_t pwm_v_cc0 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.v);
-    uint32_t pwm_w_cc0 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.w);
+
+     pwm_u_cc0 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.u);
+     pwm_v_cc0 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.v);
+     pwm_w_cc0 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.w);
+     
+     if(pwm_u_cc0<1){pwm_u_cc0=1;}
+     if(pwm_v_cc0<1){pwm_v_cc0=1;}
+     if(pwm_w_cc0<1){pwm_w_cc0=1;}
     
     d_uvw_cmd_adj = PWM_INVERSION ? (UVW_t){.w=(1.0f - motor[0].vars_ptr->d_uvw_cmd_fall.w), .v=(1.0f - motor[0].vars_ptr->d_uvw_cmd_fall.v), .u=(1.0f - motor[0].vars_ptr->d_uvw_cmd_fall.u)} :
                                           (UVW_t){.w=motor[0].vars_ptr->d_uvw_cmd_fall.w, .v=motor[0].vars_ptr->d_uvw_cmd_fall.v, .u=motor[0].vars_ptr->d_uvw_cmd_fall.u};
 
-    
-    uint32_t pwm_u_cc1 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.u);
-    uint32_t pwm_v_cc1 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.v);
-    uint32_t pwm_w_cc1 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.w);
+    pwm_u_cc1 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.u);
+    pwm_v_cc1 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.v);
+    pwm_w_cc1 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * d_uvw_cmd_adj.w);
+  
     Cy_TCPWM_PWM_SetCompare0BufVal(PWM_U_HW, PWM_U_NUM, pwm_u_cc0);
     Cy_TCPWM_PWM_SetCompare1BufVal(PWM_U_HW, PWM_U_NUM, pwm_u_cc1);
     Cy_TCPWM_PWM_SetCompare0BufVal(PWM_V_HW, PWM_V_NUM, pwm_v_cc0);
@@ -526,16 +620,15 @@ void MCU_RunISR0(void)
     uint32_t adc_isr0_cc_samp0, adc_isr0_cc_samp1;
     if(motor[0].params_ptr->sys.analog.shunt.type == Single_Shunt)
     {
-        adc_isr0_cc_samp0 = PWM_INVERSION ? (uint32_t)(mcu[0].pwm.duty_cycle_coeff * (1.0f + motor[0].vars_ptr->d_samp[0])) : (uint32_t)(mcu[0].pwm.duty_cycle_coeff * motor[0].vars_ptr->d_samp[0]);
-        adc_isr0_cc_samp1 = PWM_INVERSION ? (uint32_t)(mcu[0].pwm.duty_cycle_coeff * (1.0f + motor[0].vars_ptr->d_samp[1])) : (uint32_t)(mcu[0].pwm.duty_cycle_coeff * motor[0].vars_ptr->d_samp[1]);
+        adc_isr0_cc_samp0 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * motor[0].vars_ptr->d_samp[0]);
+        adc_isr0_cc_samp1 = (uint32_t)(mcu[0].pwm.duty_cycle_coeff * motor[0].vars_ptr->d_samp[1]);
 
         Cy_TCPWM_PWM_SetCompare0BufVal(ADC0_ISR0_HW, ADC0_ISR0_NUM, adc_isr0_cc_samp0);
         Cy_TCPWM_PWM_SetCompare1BufVal(ADC1_ISR0_HW, ADC1_ISR0_NUM, adc_isr0_cc_samp1);
 
     }
-    
-#if (MOTOR_CTRL_NO_OF_SCOPE_CHANNELS > 0) /*if scope is enabled*/
-    ProbeScope_Sampling();
+#if MTB_OSCILLOSCOPE_MAX_CH > 0 /*if scope is enabled*/
+    mtb_oscilloscope_sampling();
 #endif
 
 #if defined (EXE_TIMER_ENABLED)
@@ -557,12 +650,7 @@ void MCU_RunISR1(void)
 
 #if defined (N_FAULT_HW_PORT)
     motor[0].sensor_iface_ptr->digital.fault = !Cy_GPIO_Read(N_FAULT_HW_PORT, N_FAULT_HW_NUM);
-    // Detect kill via TCPWM: counter not running indicates kill event
-    if (!(Cy_TCPWM_PWM_GetStatus(PWM_U_HW, PWM_U_NUM) & CY_TCPWM_PWM_STATUS_COUNTER_RUNNING))
-    {
-        motor[0].sensor_iface_ptr->digital.fault = true;
-    }
-    motor[0].faults_ptr->flags.hw.cs_ocp = motor[0].sensor_iface_ptr->digital.fault ? 0b111 : 0b000; // hw faults only cover over-current without SGD
+    motor[0].faults_ptr->flags.hw.cs_ocp = motor[0].sensor_iface_ptr->digital.fault ? 0b111 : 0b000; // physical gate-driver over-current input
 #endif
 
     // Direction switch
@@ -587,8 +675,18 @@ void MCU_RunISR1(void)
     motor[0].sensor_iface_ptr->digital.brk = 0x0; // no brake switch
 #endif    
     
+    // Voltage reading for offset protection fault
+    if (true == motor[0].vars_ptr->curr_off_check_enable)
+    {
+        MCU_ComputeOffsetVoltage(0);
+    }
+
     // Control ISR1
     STATE_MACHINE_RunISR1(&motor[0]);
+
+#if defined(PG_OUT_ENABLED)
+    PgOut_UpdateState();
+#endif
 
     // SW fault LED
 #if defined(N_FAULT_LED_SW_PORT) // seperate leds for hw and sw faults
@@ -656,15 +754,19 @@ void MCU_Init(uint8_t motor_id)
     MCU_InitTimers();
     MCU_InitPosInterface();
     MCU_InitWatchdog();
-#if MOTOR_CTRL_NO_OF_SCOPE_CHANNELS > 0 /*if scope is enabled*/
-    static bool probe_scope_initialized = false;
-    if (!probe_scope_initialized)
+#if MTB_OSCILLOSCOPE_MAX_CH > 0 /*if scope is enabled*/
+    static bool oscilloscope_initialized = false;
+    if (!oscilloscope_initialized)
     {
-        ProbeScope_Init((uint32_t)motor[0].params_ptr->sys.samp.fs0);
-        probe_scope_initialized = true;
+        mtb_oscilloscope_init((uint32_t)motor[0].params_ptr->sys.samp.fs0);
+        oscilloscope_initialized = true;
     }
 #endif
     motor[motor_id].sensor_iface_ptr->digital.dir = true; // initial direction is positive
+
+#if defined(PG_OUT_ENABLED)
+    PgOut_Init();
+#endif
 }
 
 RAMFUNC_BEGIN
@@ -768,19 +870,18 @@ RAMFUNC_END
 RAMFUNC_BEGIN
 bool MCU_FlashRead(uint8_t motor_id,PARAMS_ID_t id, PARAMS_t* ram_data)
 {
-    if(!mcu[0].eeprom.init_done)
+    if(!mcu[motor_id].eeprom.init_done)
     {
         MCU_FlashInit();
     }
 
-    if (CY_EM_EEPROM_SUCCESS != mcu[0].eeprom.status)
+    if (CY_EM_EEPROM_SUCCESS != mcu[motor_id].eeprom.status)
     {
         return false;
     }
 
-
-    mcu[0].eeprom.status = Cy_Em_EEPROM_Read(0u, ram_data, sizeof(PARAMS_t), &mcu[0].eeprom.context);
-    if (CY_EM_EEPROM_SUCCESS != mcu[0].eeprom.status)
+    mcu[motor_id].eeprom.status = Cy_Em_EEPROM_Read((sizeof(PARAMS_t)), ram_data, sizeof(PARAMS_t), &mcu[motor_id].eeprom.context);
+    if (CY_EM_EEPROM_SUCCESS != mcu[motor_id].eeprom.status)
     {
         return false;
     }
@@ -796,25 +897,23 @@ RAMFUNC_END
 RAMFUNC_BEGIN
 bool MCU_FlashWrite(uint8_t motor_id,PARAMS_t* ram_data)
 {
+  if(!mcu[motor_id].eeprom.init_done)
+  {
+    MCU_FlashInit();
+  }
 
-    if(!mcu[0].eeprom.init_done)
-    {
-        MCU_FlashInit();
-    }
+  if (CY_EM_EEPROM_SUCCESS != mcu[motor_id].eeprom.status)
+  {
+    return false;
+  }
 
-    if (CY_EM_EEPROM_SUCCESS != mcu[0].eeprom.status)
-    {
-        return false;
-    }
+  mcu[motor_id].eeprom.status = Cy_Em_EEPROM_Write((sizeof(PARAMS_t)), ram_data, sizeof(PARAMS_t), &mcu[motor_id].eeprom.context);
+  if (CY_EM_EEPROM_SUCCESS != mcu[motor_id].eeprom.status)
+  {
+    return false;
+  }
 
-
-    mcu[0].eeprom.status = Cy_Em_EEPROM_Write(0U, ram_data, sizeof(PARAMS_t), &mcu[0].eeprom.context);
-    if (CY_EM_EEPROM_SUCCESS != mcu[0].eeprom.status)
-    {
-        return false;
-    }
-
-    return true;
+  return true;
 }
 RAMFUNC_END
 
@@ -822,16 +921,16 @@ RAMFUNC_BEGIN
 void MCU_StartPeripherals(uint8_t motor_id)
 {
     MCU_EnterCriticalSection(); // No ISRs beyond this point
-  
-    NVIC_EnableIRQ(mcu[0].interrupt.nvic_dma_adc_0);
+
+    NVIC_EnableIRQ(mcu[motor_id].interrupt.nvic_dma_adc_0);
     Cy_DMA_Enable(DMA_ADC_0_HW);
-    NVIC_EnableIRQ(mcu[0].interrupt.nvic_dma_adc_1);
+    NVIC_EnableIRQ(mcu[motor_id].interrupt.nvic_dma_adc_1);
     Cy_DMA_Enable(DMA_ADC_1_HW);
 #if defined(DMA_ADC_2_HW)
     NVIC_EnableIRQ(mcu[0].interrupt.nvic_dma_adc_2);
     Cy_DMA_Enable(DMA_ADC_2_HW);    
 #endif    
-    NVIC_EnableIRQ(mcu[0].interrupt.nvic_sync_isr1);
+    NVIC_EnableIRQ(mcu[motor_id].interrupt.nvic_sync_isr1);
 
     Cy_SAR2_Enable(ADC_0_HW);
     Cy_SAR2_Enable(ADC_1_HW);
@@ -844,9 +943,9 @@ void MCU_StartPeripherals(uint8_t motor_id)
     Cy_TCPWM_MOTIF_Start(POSIF_ENC_HW); 
 #endif
     
-    mcu[0].isr1.count = 0U;
-    mcu[0].isr0.count = 0U;
-
+    mcu[motor_id].isr1.count = 0U;
+    mcu[motor_id].isr0.count = 0U;
+    
     Cy_TCPWM_PWM_Enable(ADC0_ISR0_HW, ADC0_ISR0_NUM);
     Cy_TCPWM_PWM_Enable(ADC1_ISR0_HW, ADC1_ISR0_NUM);    
     Cy_TCPWM_PWM_Enable(PWM_SYNC_HW, PWM_SYNC_NUM);
@@ -864,14 +963,14 @@ void MCU_StartPeripherals(uint8_t motor_id)
     Cy_TCPWM_TriggerStart_Single(EXE_TIMER_HW, EXE_TIMER_NUM);   
   
 #if defined(N_HALL_EN_PORT) && (defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC))
-    if (motor[0].params_ptr->sys.fb.mode == Hall)
+    if (motor[motor_id].params_ptr->sys.fb.mode == Hall)
     { 
         Cy_GPIO_Clr(N_HALL_EN_PORT, N_HALL_EN_PIN);
     }
 #endif
 
 #if defined(ENC_EN_PORT) && (defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC))
-    if (motor[0].params_ptr->sys.fb.mode == AqB_Enc)
+    if (motor[motor_id].params_ptr->sys.fb.mode == AqB_Enc)
     { 
         Cy_GPIO_Set(ENC_EN_PORT, ENC_EN_PIN);
     }
@@ -887,14 +986,14 @@ void MCU_StopPeripherals(uint8_t motor_id)
     MCU_EnterCriticalSection(); // No ISRs beyond this point
 
 #if defined(ENC_EN_PORT) && (defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC))
-    if (motor[0].params_ptr->sys.fb.mode == AqB_Enc)
+    if (motor[motor_id].params_ptr->sys.fb.mode == AqB_Enc)
     { 
         Cy_GPIO_Clr(ENC_EN_PORT, ENC_EN_PIN);
     }
 #endif
     
 #if defined(N_HALL_EN_PORT) && (defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC))
-    if (motor[0].params_ptr->sys.fb.mode == Hall)
+    if (motor[motor_id].params_ptr->sys.fb.mode == Hall)
     { 
         Cy_GPIO_Set(N_HALL_EN_PORT, N_HALL_EN_PIN);
     }
@@ -921,16 +1020,15 @@ void MCU_StopPeripherals(uint8_t motor_id)
     Cy_SAR2_Disable(ADC_1_HW);
     Cy_SAR2_Disable(ADC_0_HW);
 
-
-    NVIC_DisableIRQ(mcu[0].interrupt.nvic_sync_isr1);
+    NVIC_DisableIRQ(mcu[motor_id].interrupt.nvic_sync_isr1);
 #if defined(DMA_ADC_2_HW)
     Cy_DMA_Disable(DMA_ADC_2_HW);
-    NVIC_DisableIRQ(mcu[0].interrupt.nvic_dma_adc_2);    
+    NVIC_DisableIRQ(mcu[motor_id].interrupt.nvic_dma_adc_2);
 #endif 
     Cy_DMA_Disable(DMA_ADC_1_HW);
-    NVIC_DisableIRQ(mcu[0].interrupt.nvic_dma_adc_1);
+    NVIC_DisableIRQ(mcu[motor_id].interrupt.nvic_dma_adc_1);
     Cy_DMA_Disable(DMA_ADC_0_HW);
-    NVIC_DisableIRQ(mcu[0].interrupt.nvic_dma_adc_0);
+    NVIC_DisableIRQ(mcu[motor_id].interrupt.nvic_dma_adc_0);
 
     MCU_ExitCriticalSection();
 }
@@ -939,7 +1037,7 @@ RAMFUNC_END
 RAMFUNC_BEGIN
 bool MCU_ArePhaseVoltagesMeasured(uint8_t motor_id)
 {
-  return mcu[0].adc_mux.en;
+  return mcu[motor_id].adc_mux.en;
 }
 RAMFUNC_END
 

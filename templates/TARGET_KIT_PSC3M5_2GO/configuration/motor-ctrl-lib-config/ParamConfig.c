@@ -40,10 +40,15 @@
 void PARAMS_InitManual(PARAMS_t* params_ptr);
 void PARAMS_InitAutoCalc(PARAMS_t* params_ptr);
 
+STATIC_ASSERT(!((ADC_CS_SHUNT_TYPE == Single_Shunt) && (MOTOR_CTRL_VOLT_MOD_SCHEME == Neutral_Point_Modulation) &&(MOTOR_CTRL_SS_MEAS_TYPE == Phase_Shift)),
+              "Single_Shunt - Phase shift PWM with Neutral_Point_Modulation is not supported");
 void PARAMS_Init(MOTOR_t *motor_ptr)
 {
     PARAMS_t* params_ptr = motor_ptr->params_ptr;
 
+    // mc_info.chip_id is read by hardware interface from the chip
+    mc_info.kit_id = KIT_ID;
+    
     // Parameters are initialized and saved in flash if
     // - Flash read is not successful
     // - First time running the FW
@@ -64,12 +69,11 @@ void PARAMS_Init(MOTOR_t *motor_ptr)
         hw_fcn.FlashWrite(motor_ptr->motor_instance,params_ptr);
     }
 
-    // mc_info.chip_id is read by hardware interface from the chip
-    mc_info.kit_id = KIT_ID;
+  
 }
-
 void PARAMS_InitManual(PARAMS_t* params_ptr)
 {
+
     params_ptr->id.code = PARAMS_CODE;
     params_ptr->id.build_config = BUILD_CONFIG_ID;
     params_ptr->id.ver = PARAMS_VER;
@@ -124,12 +128,17 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->sys.analog.shunt.single_shunt.ki = MOTOR_CTRL_SS_HMOD_KI; // [#]
     params_ptr->sys.analog.shunt.single_shunt.adc_t_sh_delay =MOTOR_CTRL_SS_PS_SH_DELAY; //[sec]
     
+    params_ptr->sys.analog.shunt.leg_shunt.adc_t_sample_delay =MOTOR_CTRL_LS_SAMPLE_DELAY; //[sec]
+    
     params_ptr->sys.analog.shunt.res = ADC_CS_SHUNT_RES; // [Ohm]
     params_ptr->sys.analog.shunt.cs_settle_raio = ADC_CS_SETTLE_RATIO;
     
     params_ptr->sys.analog.shunt.current_sense_polarity = ADC_CS_CURRENT_SENSE_POLARITY;
     params_ptr->sys.analog.cs_meas_type = ADC_CS_CURRENT_MEASUREMENT_TYPE;
     params_ptr->sys.analog.shunt.current_sensitivity = ADC_CS_CURRENT_SENSITIVITY; // [V/A]
+    
+    params_ptr->sys.analog.shunt.single_shunt.low_noise_to_phase_shift_thres = MOTOR_CTRL_LOWNOISE_TO_PHASESHIFT_THRES;
+    params_ptr->sys.analog.shunt.single_shunt.phase_shift_to_low_noise_thres = MOTOR_CTRL_PHASESHIFT_TO_LOWNOISE_THRES;
     
     params_ptr->sys.analog.volt.vdc_adc_scale = ADC_SCALE_VDC; //[V/V]
     params_ptr->sys.analog.volt.vuvw_adc_scale = ADC_SCALE_VUVW; //[V/V]
@@ -138,13 +147,15 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     // Rate Limiter Parameters:
     params_ptr->sys.rate_lim.w_cmd.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_SPEED_CMD_RATE)), MOTOR_POLE); // [(Ra/sec-elec)/sec]
     params_ptr->sys.rate_lim.w_ol_cmd.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_SPEED_CMD_RATE_OPEN_LOOP)), MOTOR_POLE); // [(Ra/sec-elec)/sec]
+    params_ptr->sys.rate_lim.w_hfi_cmd.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_SPEED_CMD_RATE_HFI)), MOTOR_POLE); // [(Ra/sec-elec)/sec], applied when HFI is active
 #if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC)
     params_ptr->sys.rate_lim.i_cmd = MOTOR_CTRL_CURRENT_CMD_RATE; // [A/sec]
 #elif defined(CTRL_METHOD_SFO)
     params_ptr->sys.rate_lim.T_cmd =MOTOR_CTRL_TORQUE_CMD_RATE; // [Nm/sec]
 #endif
 #if defined(CTRL_METHOD_RFO)
-    params_ptr->sys.rate_lim.p_cmd =  DEG_TO_RAD(MOTOR_CTRL_POSITION_CMD_RATE);  //[Ra/sec] 
+    params_ptr->sys.rate_lim.p_cmd =  DEG_TO_RAD(MOTOR_CTRL_POSITION_CMD_RATE);  //[Ra/sec]
+    params_ptr->sys.rate_lim.vq_cmd = MOTOR_CTRL_VQ_CMD_RATE; // [Vpk/sec]
 #endif
     // Fault Parameters:
     params_ptr->sys.faults.oc_thresh = PERC_TO_NORM(MOTOR_CTRL_OVER_CURRENT_THRESH); // [%]
@@ -157,8 +168,23 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
      
     params_ptr->sys.faults.watchdog_time = 1000; // [ms]
     
-    params_ptr->sys.faults.phase_loss.tau = MOTOR_CTLR_FAULT_PHASE_LOSS_TIME;//[sec]   
-    params_ptr->sys.faults.phase_loss.zero_current_thres = MOTOR_CTLR_FAULT_PHASE_LOSS_MIN_CURRENT; //[A]
+    params_ptr->sys.faults.phase_loss.tau = MOTOR_CTRL_FAULT_PHASE_LOSS_TIME;//[sec]   
+    params_ptr->sys.faults.phase_loss.zero_current_thres = MOTOR_CTRL_FAULT_PHASE_LOSS_MIN_CURRENT; //[A]
+#if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_SFO)
+    params_ptr->sys.faults.flux_max_thresh  = MOTOR_CTRL_FLUX_MAX_THRESH;  // [Wb]
+    params_ptr->sys.faults.flux_min_thresh  = MOTOR_CTRL_FLUX_MIN_THRESH;  // [Wb]
+    params_ptr->sys.faults.flux_fault_time = MOTOR_CTRL_FLUX_FAULT_TIME; // [sec]
+#endif
+
+#if defined(CTRL_METHOD_RFO)
+    params_ptr->sys.faults.stall_detection.stall_coefficient = MOTOR_CTRL_STALL_COEFFICIENT;      // []
+    params_ptr->sys.faults.stall_detection.filt = TAU_TO_RADSEC(MOTOR_CTRL_STALL_FILT_TAU);        // [Ra/sec]
+    params_ptr->sys.faults.stall_detection.stall_current = MOTOR_CTRL_STALL_CURRENT;               // [A]
+    params_ptr->sys.faults.stall_detection.threshold_time = MOTOR_CTRL_STALL_FAULT_TIME;           // [sec]
+ #endif
+ 
+    params_ptr->sys.faults.offset_curr_min_limit = MOTOR_OFFSET_CURR_MIN; // [V]
+    params_ptr->sys.faults.offset_curr_max_limit = MOTOR_OFFSET_CURR_MAX; // [V]
     
 
     // Command Parameters:
@@ -229,6 +255,7 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->filt.spd_ar_wz[1] = INFINITY; // [Ra/sec]
     params_ptr->filt.acc_w0 = HZ_TO_RADSEC(1.0f); // [Ra/sec]
     params_ptr->filt.trq_w0 = HZ_TO_RADSEC(MOTOR_CTRL_TORQUE_FILT_BW); // [Ra/sec]
+    params_ptr->filt.pow_w0 = HZ_TO_RADSEC(MOTOR_CTRL_POWER_FILT_BW); // [Ra/sec]
 
     // Control Mode:
     params_ptr->ctrl.mode = MOTOR_CTRL_CTRL_MODE; // [#]
@@ -282,6 +309,9 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->ctrl.volt.v_to_f_ratio = MOTOR_CTRL_VOLT_VF_RATIO; // [Vpk/(Ra/sec-elec)]
     params_ptr->ctrl.volt.mod_method = MOTOR_CTRL_VOLT_MOD_SCHEME;
     params_ptr->ctrl.volt.five_seg.en = MOTOR_CTRL_FIVE_SEG_MOD; //5-segment enable
+    params_ptr->ctrl.volt.five_seg.mode = MOTOR_CTRL_FIVE_SEG_MOD_SELECTION; /* Five_Seg_MI_Based = 0, Five_Seg_Speed_Based =1 */
+    params_ptr->ctrl.volt.five_seg.active_w.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_FIVE_SEG_ACT_SPEED_RPM)), MOTOR_POLE);
+    params_ptr->ctrl.volt.five_seg.inactive_w.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_FIVE_SEG_INACT_SPEED_RPM)), MOTOR_POLE);
     params_ptr->ctrl.volt.five_seg.active_mi = PERC_TO_NORM(MOTOR_CTRL_FIVE_SEG_MOD_ACT_THRESH); //mi = Vpeak/(2*vdc/3)
     params_ptr->ctrl.volt.five_seg.inactive_mi = PERC_TO_NORM(MOTOR_CTRL_FIVE_SEG_MOD_INACT_THRESH);
     params_ptr->ctrl.volt.five_seg.w0_filt = HZ_TO_RADSEC(1.0f);
@@ -293,6 +323,10 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->ctrl.flux_weaken.vdc_coeff = LINE_TO_PHASE(MOTOR_CTRL_FLUX_WEAKEN_VOLT_MARGIN); // [#]
 #if defined(CTRL_METHOD_RFO)
     params_ptr->ctrl.flux_weaken.bw = HZ_TO_RADSEC(MOTOR_CTRL_FLUX_WEAKEN_BW); // [Ra/sec], at least 0.5 dec below current loop's bandwidth
+    if (params_ptr->ctrl.mode == Vq_Mode_FOC_Sensorless_Volt_Startup)
+    {
+        params_ptr->ctrl.flux_weaken.en = MOTOR_CTRL_FLUX_WEAKEN_VQ;
+    }
 #endif
 
     // Align (Pre-Positioning) Parameters:
@@ -308,6 +342,7 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->ctrl.high_freq_inj.w_h = HZ_TO_RADSEC(MOTOR_CTRL_HFI_INJECT_FREQ); // [Ra/sec], excitation freqeuncy, must be less than fs0/8
     params_ptr->ctrl.high_freq_inj.sine.w_sep = HZ_TO_RADSEC(MOTOR_CTRL_HFI_SEPARATION_FREQ); // [Ra/sec], separation freqeuncy
     params_ptr->ctrl.high_freq_inj.pll.w0 = HZ_TO_RADSEC(60.0f); // [Ra/sec]
+    params_ptr->ctrl.high_freq_inj.saliency_th_offset = DEG_TO_RAD(0.0f);  // [Ra-elec], HFI seed-angle offset. Default 0 for Ld<Lq. If Ld>Lq, set to ~1.5707963f (PI/2, i.e. 90 elec deg).
 
     // Profiler Parameters (needs high fs0 & fpwm e.g. fs0=30kHz, fpwm=60kHz):
     params_ptr->profiler.overwrite = MOTOR_CTRL_PROFILER_PARAM_OVERWRITE; // []
@@ -319,7 +354,7 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->profiler.w_cmd_elec.max = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_PROFILER_SPEED_CMD_MAX)), MOTOR_POLE); // [Ra/sec-elec]
     params_ptr->profiler.time_rot_lock = MOTOR_CTRL_PROFILER_ROTOR_LOCK_TIME; // [sec]
     params_ptr->profiler.time_spd = MOTOR_CTRL_PROFILER_FLUX_EST_TIME; // [sec]
-
+    params_ptr->profiler.rate_lim_ramp_down = params_ptr->sys.rate_lim.w_cmd.elec * 0.5f;
 #elif defined(CTRL_METHOD_TBC)
     params_ptr->ctrl.tbc.mode = MOTOR_CTRL_TBC_MODE;
     params_ptr->ctrl.tbc.trap.ramp_cnt = MOTOR_CTRL_TBC_TRAP_RAMP_COUNT; // [#]
@@ -381,6 +416,9 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
 
     params_ptr->sys.analog.shunt.single_shunt.adc_d_min = 2.0f * params_ptr->sys.analog.shunt.single_shunt.adc_t_min * params_ptr->sys.samp.fpwm; // [%]
     params_ptr->sys.analog.shunt.single_shunt.adc_d_sh_delay =2.0f *params_ptr->sys.analog.shunt.single_shunt.adc_t_sh_delay * params_ptr->sys.samp.fpwm; //[%]; 
+    
+    params_ptr->sys.analog.shunt.leg_shunt.adc_d_sample_delay =2.0f *params_ptr->sys.analog.shunt.leg_shunt.adc_t_sample_delay * params_ptr->sys.samp.fpwm; //[%]; 
+
     // Fault Parameters:
     if(!params_ptr->autocal_disable.vdc_fault_threshold) /*Skip the calculation if this bit is set*/
     {
@@ -546,6 +584,12 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
     {
       params_ptr->ctrl.flux_weaken.ki = params_ptr->motor.lam / (params_ptr->motor.ld * LINE_TO_PHASE(params_ptr->sys.vdc_nom)) * params_ptr->ctrl.flux_weaken.bw * params_ptr->sys.samp.ts1; // % [Ra/sec.A/V]
     }
+    if (params_ptr->ctrl.mode == Vq_Mode_FOC_Sensorless_Volt_Startup)
+    {
+        params_ptr->sys.cmd.vq_max = params_ptr->motor.v_nom; // [Vpk] full-scale Vq at pot=100%
+        params_ptr->sys.cmd.vq_damp = 0.50f * params_ptr->obs.pll.w0 * params_ptr->motor.lq;
+        params_ptr->ctrl.flux_weaken.en = Dis;
+    }
 #elif defined(CTRL_METHOD_SFO)
     params_ptr->ctrl.flux_weaken.w_min.elec = 0.5f * params_ptr->sys.vdc_nom * params_ptr->ctrl.flux_weaken.vdc_coeff / params_ptr->motor.mtpa_lut.y[LUT_1D_WIDTH - 1]; // [Ra/sec-elec]
 #endif
@@ -587,6 +631,7 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
 #elif defined(CTRL_METHOD_SFO)
         params_hfi->bw_red_coeff = params_hfi->sine.w_sep / MAX(params_ptr->ctrl.flux.bw, params_ptr->ctrl.delta.bw);
 #endif
+        params_hfi->vd_lim_ratio = 1.0f; // [#], d-axis PI output limit ratio during HFI (0..1). 
     }
     else if (params_hfi->type == Square_Wave)
     {
@@ -596,6 +641,7 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
         params_hfi->pll.ki = 0.5f * params_hfi->pll.w0 * params_hfi->pll.kp; // [(Ra/sec).(Ra/sec-elec)/(A/sec)]
         params_hfi->pll.th_offset.elec = 0.0f;
         params_hfi->bw_red_coeff = 1.0f;
+        params_hfi->vd_lim_ratio = 1.0f; // [#], d-axis PI output limit ratio during HFI (0..1). 
     }
     params_hfi->lock_time = RADSEC_TO_TAU(params_hfi->pll.w0) * 40.0f; // [sec]
 
